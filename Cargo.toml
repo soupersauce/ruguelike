@@ -5,3 +5,5 @@ authors = ["soupersauce <soupersauce@gmail.com>"]
 edition = "2018"
 
 [dependencies]
+tcod = "0.15"
+sdl2 = "0.32.2"
