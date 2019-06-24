@@ -2,6 +2,8 @@ use std::cmp;
 use tcod::colors::*;
 use tcod::console::*;
 use tcod::colors::{self, Color};
+use crate::constants::*;
+
 
 #[derive(Debug)]
 pub struct Object {
@@ -53,7 +55,7 @@ impl Object {
         ((dx.pow(2) + dy.pow(2)) as f32).sqrt()
     }
 
-    pub fn take_damage(&mut self, damage: i32) {
+    pub fn take_damage(&mut self, damage: i32, messages: &mut Messages) {
         //apply damage if possible
         if let Some(fighter) = self.fighter.as_mut() {
             if damage > 0 {
@@ -64,28 +66,32 @@ impl Object {
         if let Some(fighter) = self.fighter {
             if fighter.hp <= 0 {
                 self.alive = false;
-                fighter.on_death.callback(self);
+                fighter.on_death.callback(self, messages);
             }
         }
     }
 
-    pub fn attack(&mut self, target: &mut Object) {
+    pub fn attack(&mut self, target: &mut Object, messages: &mut Messages) {
         // a simple formula for attack damage
         let damage = self.fighter.map_or(0, |f| f.power) - target.fighter.map_or(0, |f| f.defense);
         if damage > 0 {
             //make the target take some damage
-            println!(
-                "{} attacks {} for {} hit points.",
-                self.name, target.name, damage
+            message(
+                messages,
+                format!("{} attacks {} for {} hit points.",self.name, target.name, damage),
+                colors::WHITE,
             );
-            target.take_damage(damage);
+            target.take_damage(damage, messages);
         } else {
-            println!(
-                "{} attacks {} but it has no effect!",
-                self.name, target.name
+            message(
+                messages,
+                format!("{} attacks {} but it has no effect!", self.name, target.name),
+                colors::WHITE,
             );
         }
     }
+
+
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -178,18 +184,47 @@ pub enum DeathCallback {
 }
 
 impl DeathCallback {
-    fn callback(self, object: &mut Object) {
+    fn callback(self, object: &mut Object, messages: &mut Messages) {
         use DeathCallback::*;
         let callback: fn(&mut Object) = match self {
-            Player => player_death,
-            Monster => monster_death,
+            Player => {player_death},
+            Monster => {monster_death},
         };
-        callback(object);
+        callback(object, messages);
     }
+}
+
+pub fn monster_death(monster: &mut Object, messages: &mut Messages) {
+    message(
+        messages, 
+        format!("{} is dead!", monster.name), 
+        colors::ORANGE,
+    );
+    monster.char = '%';
+    monster.color = colors::DARK_RED;
+    monster.blocks = false;
+    monster.fighter = None;
+    monster.ai = None;
+    monster.name = format!("remains of {}", monster.name);
+}
+
+pub fn player_death(player: &mut Object, messages: &mut Messages) {
+    // the game ended!
+    message(
+        messages,
+        format!("You died!"),
+        colors::RED,
+        );
+
+    //for added effect, transform the player into a corpse!
+    player.char = '%';
+    player.color = colors::DARK_RED;
 }
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Ai;
+
+type Messages = Vec<(String, Color)>;
 
 pub fn create_h_tunnel(x1: i32, x2: i32, y: i32, map: &mut Map) {
     for x in cmp::min(x1, x2)..(cmp::max(x1, x2) +1) {
@@ -247,21 +282,46 @@ pub fn mut_two<T>(first_index: usize, second_index: usize, items: &mut [T]) -> (
     }
 }
 
-pub fn player_death(player: &mut Object) {
-    // the game ended!
-    println!("You died!");
 
-    //for added effect, transform the player into a corpse!
-    player.char = '%';
-    player.color = colors::DARK_RED;
+pub fn render_bar(
+    panel: &mut Offscreen,
+    x:              i32,
+    y:              i32,
+    total_width:    i32,
+    name:           &str,
+    value:          i32,
+    maximum:        i32,
+    bar_color:      Color,
+    back_color:     Color,
+    ) {
+    // render a bar (HP, experience, etc.) First calculate the width of the bar
+    let bar_width = (value as f32 / maximum as f32 * total_width as f32) as i32;
+
+    // render the background first
+    panel.set_default_background(back_color);
+    panel.rect(x, y, total_width, 1, false, BackgroundFlag::Screen);
+
+    // now render the bar on top
+    panel.set_default_background(bar_color);
+    if bar_width > 0 {
+        panel.rect(x, y, bar_width, 1, false, BackgroundFlag::Screen);
+    }
+
+    //finally some centered text with values
+    panel.set_default_foreground(colors::WHITE);
+    panel.print_ex(x + total_width / 2, 
+                   y, 
+                   BackgroundFlag::None, 
+                   TextAlignment::Center, 
+                   &format!("{}: {}/{}", name, value, maximum),
+                   );
+}
+pub fn message<T: Into<String>>(messages: &mut Messages, message: T, color: Color) {
+    // if the buffer is full, remove the first message to make room for the new one
+     if messages.len() == ::MSG_HEIGHT {
+         messages.remove(0);
+     }
+     // add the new line as a tuple, with the text and the color
+     messages.push((message.into(), color));
 }
 
-pub fn monster_death(monster: &mut Object) {
-    println!("{} is dead!", monster.name);
-    monster.char = '%';
-    monster.color = colors::DARK_RED;
-    monster.blocks = false;
-    monster.fighter = None;
-    monster.ai = None;
-    monster.name = format!("remains of {}", monster.name);
-}

@@ -6,30 +6,38 @@ use lib::*;
 use lib::PlayerAction;
 use lib::DeathCallback::*;
 
-const LIMIT_FPS: i32 = 60;
+static LIMIT_FPS: i32 = 60;
 
-const SCREEN_WIDTH: i32 = 80;
-const SCREEN_HEIGHT: i32 = 50;
+static SCREEN_WIDTH: i32 = 80;
+static SCREEN_HEIGHT: i32 = 50;
 
-const MAP_WIDTH: i32 = 80;
-const MAP_HEIGHT: i32 = 45;
+static BAR_WIDTH: i32 = 20;
+static PANEL_HEIGHT: i32 = 7;
+static PANEL_Y: i32 = SCREEN_HEIGHT - PANEL_HEIGHT;
 
-const COLOR_DARK_WALL: Color = Color { r: 0, g: 0, b: 100 };
-const COLOR_LIGHT_WALL: Color = Color { r: 130, g: 110, b:50 };
-const COLOR_DARK_GROUND: Color = Color { r: 50, g: 50, b: 150 };
-const COLOR_LIGHT_GROUND: Color = Color { r: 200, g: 180, b: 50 };
+static MSG_X:     i32 = BAR_WIDTH + 2;
+static MSG_WIDTH: i32 = SCREEN_WIDTH - BAR_WIDTH -2;
+static MSG_HEIGHT: usize = PANEL_HEIGHT as usize -1;
 
-const ROOM_MAX_SIZE: i32 = 10;
-const ROOM_MIN_SIZE: i32 = 6;
-const MAX_ROOMS: i32 = 30;
+static MAP_WIDTH: i32 = 80;
+static MAP_HEIGHT: i32 = 45;
 
-const MAX_ROOM_MONSTERS: i32 = 3;
+static COLOR_DARK_WALL: Color = Color { r: 0, g: 0, b: 100 };
+static COLOR_LIGHT_WALL: Color = Color { r: 130, g: 110, b:50 };
+static COLOR_DARK_GROUND: Color = Color { r: 50, g: 50, b: 150 };
+static COLOR_LIGHT_GROUND: Color = Color { r: 200, g: 180, b: 50 };
 
-const FOV_ALGO: FovAlgorithm = FovAlgorithm::Basic;
-const FOV_LIGHT_WALLS: bool = true;
-const TORCH_RADIUS: i32 = 10;
+static ROOM_MAX_SIZE: i32 = 10;
+static ROOM_MIN_SIZE: i32 = 6;
+static MAX_ROOMS: i32 = 30;
 
-const PLAYER: usize = 0;
+static MAX_ROOM_MONSTERS: i32 = 3;
+
+static FOV_ALGO: FovAlgorithm = FovAlgorithm::Basic;
+static FOV_LIGHT_WALLS: bool = true;
+static TORCH_RADIUS: i32 = 10;
+
+static PLAYER: usize = 0;
 
 fn main() {
     let mut root = Root::initializer()
@@ -70,6 +78,16 @@ fn main() {
 
     let mut previous_player_position = (-1, -1);
 
+    let mut panel = Offscreen::new(SCREEN_WIDTH, PANEL_HEIGHT);
+
+    let mut messages = vec![];
+
+    message(
+        &mut messages,
+        "Welcom stranger! Prepare to perish.",
+        colors::RED,
+    )
+
     while !root.window_closed() {
         con.clear();
 
@@ -82,6 +100,8 @@ fn main() {
             &mut map,
             &mut fov_map,
             fov_recompute,
+            &mut panel,
+            &messages,
             );
 
         root.flush();
@@ -213,12 +233,14 @@ pub fn make_map(objects: &mut Vec<Object>) -> Map {
     (map)
 }
 
-fn render_all(root: &mut Root, 
-              con: &mut Offscreen, 
-              objects: &[Object], 
-              map: &mut Map,
-              fov_map: &mut FovMap,
-              fov_recompute: bool,
+fn render_all(root:             &mut Root, 
+              con:              &mut Offscreen, 
+              objects:          &[Object], 
+              map:              &mut Map,
+              fov_map:          &mut FovMap,
+              fov_recompute:    bool,
+              panel:            &mut Offscreen,
+              messages:         &Messages,
       ) {
     if fov_recompute {
         let player = &objects[PLAYER];
@@ -269,16 +291,45 @@ fn render_all(root: &mut Root,
         1.0,
         1.0,
     );
-    if let Some(fighter) = objects[PLAYER].fighter {
-        root.print_ex(
-            1,
-            SCREEN_HEIGHT - 2,
-            BackgroundFlag::None,
-            TextAlignment::Left,
-            format!("HP: {}/{} ", fighter.hp, fighter.max_hp),
-        );
+    // prepare to render GUI panel
+    panel.set_default_background(colors::BLACK);
+    panel.clear();
+
+    // print the game messages, one line at a time
+    let mut y = MSG_HEIGHT as i32;
+    for &(ref msg, color) in messages.iter().rev() {
+        let msg_height = panel.get_height_rect(MSG_X, y, MSG_WIDTH, 0, msg);
+        y -= msg_height;
+        if y < 0 {
+            break;
+        }
+        panel.set_default_foreground(color);
+        panel.print_rect(MSG_X, y, MSG_WIDTH, 0, msg);
     }
-}
+
+    // show the player's status
+    let hp = objects[PLAYER].fighter.map_or(0, |f| f.hp);
+    let max_hp = objects[PLAYER].fighter.map_or(0, |f| f.max_hp);
+    render_bar(panel, 
+                1, 
+                1, 
+                BAR_WIDTH, 
+                "HP", 
+                hp, 
+                max_hp, 
+                colors::LIGHT_RED, 
+                colors::DARKER_RED,
+    );
+    blit(
+        panel, 
+        (0, 0), 
+        (SCREEN_WIDTH, SCREEN_HEIGHT), 
+        root, 
+        (0, PANEL_Y), 
+        1.0, 
+        1.0
+    );
+    }
 
 fn place_objects(room: Rect, objects: &mut Vec<Object>) {
     // choose random number of monsters
@@ -355,3 +406,4 @@ pub fn ai_take_turn(monster_id: usize, map: &Map, objects: &mut [Object], fov_ma
         }
     }
 }
+
