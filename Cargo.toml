@@ -4,13 +4,6 @@ version = "0.1.0"
 authors = ["soupersauce <soupersauce@gmail.com>"]
 edition = "2018"
 
-[lib]
-name = "lib"
-path = "src/lib.rs"
-[constants]
-name = "constants"
-path = "src/constants.rs"
-
 [dependencies]
 tcod = "0.15"
 sdl2 = "0.32.2"

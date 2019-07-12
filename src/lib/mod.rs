@@ -2,8 +2,8 @@ use std::cmp;
 use tcod::colors::*;
 use tcod::console::*;
 use tcod::colors::{self, Color};
-use crate::constants::*;
 
+pub mod constants;
 
 #[derive(Debug)]
 pub struct Object {
@@ -186,9 +186,9 @@ pub enum DeathCallback {
 impl DeathCallback {
     fn callback(self, object: &mut Object, messages: &mut Messages) {
         use DeathCallback::*;
-        let callback: fn(&mut Object) = match self {
-            Player => {player_death},
-            Monster => {monster_death},
+        let callback: fn(&mut Object, &mut Messages) = match self {
+            Player => player_death,
+            Monster => monster_death,
         };
         callback(object, messages);
     }
@@ -224,7 +224,7 @@ pub fn player_death(player: &mut Object, messages: &mut Messages) {
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Ai;
 
-type Messages = Vec<(String, Color)>;
+pub type Messages = Vec<(String, Color)>;
 
 pub fn create_h_tunnel(x1: i32, x2: i32, y: i32, map: &mut Map) {
     for x in cmp::min(x1, x2)..(cmp::max(x1, x2) +1) {
@@ -318,7 +318,7 @@ pub fn render_bar(
 }
 pub fn message<T: Into<String>>(messages: &mut Messages, message: T, color: Color) {
     // if the buffer is full, remove the first message to make room for the new one
-     if messages.len() == ::MSG_HEIGHT {
+     if messages.len() == constants::MSG_HEIGHT {
          messages.remove(0);
      }
      // add the new line as a tuple, with the text and the color

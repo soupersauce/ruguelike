@@ -2,42 +2,14 @@ use rand::Rng;
 use tcod::colors::{self, Color};
 use tcod::console::*;
 use tcod::map::{FovAlgorithm, Map as FovMap};
-use lib::*;
-use lib::PlayerAction;
-use lib::DeathCallback::*;
 
-static LIMIT_FPS: i32 = 60;
+mod lib;
 
-static SCREEN_WIDTH: i32 = 80;
-static SCREEN_HEIGHT: i32 = 50;
+pub use crate::lib::*;
 
-static BAR_WIDTH: i32 = 20;
-static PANEL_HEIGHT: i32 = 7;
-static PANEL_Y: i32 = SCREEN_HEIGHT - PANEL_HEIGHT;
+pub use crate::lib::constants::*;
 
-static MSG_X:     i32 = BAR_WIDTH + 2;
-static MSG_WIDTH: i32 = SCREEN_WIDTH - BAR_WIDTH -2;
-static MSG_HEIGHT: usize = PANEL_HEIGHT as usize -1;
-
-static MAP_WIDTH: i32 = 80;
-static MAP_HEIGHT: i32 = 45;
-
-static COLOR_DARK_WALL: Color = Color { r: 0, g: 0, b: 100 };
-static COLOR_LIGHT_WALL: Color = Color { r: 130, g: 110, b:50 };
-static COLOR_DARK_GROUND: Color = Color { r: 50, g: 50, b: 150 };
-static COLOR_LIGHT_GROUND: Color = Color { r: 200, g: 180, b: 50 };
-
-static ROOM_MAX_SIZE: i32 = 10;
-static ROOM_MIN_SIZE: i32 = 6;
-static MAX_ROOMS: i32 = 30;
-
-static MAX_ROOM_MONSTERS: i32 = 3;
-
-static FOV_ALGO: FovAlgorithm = FovAlgorithm::Basic;
-static FOV_LIGHT_WALLS: bool = true;
-static TORCH_RADIUS: i32 = 10;
-
-static PLAYER: usize = 0;
+pub use crate::lib::DeathCallback::*;
 
 fn main() {
     let mut root = Root::initializer()
@@ -86,7 +58,7 @@ fn main() {
         &mut messages,
         "Welcom stranger! Prepare to perish.",
         colors::RED,
-    )
+    );
 
     while !root.window_closed() {
         con.clear();
@@ -108,7 +80,7 @@ fn main() {
 
         let player = &mut objects[PLAYER];
         previous_player_position = (player.x, player.y);
-        let player_action = handle_keys(&mut root, &map, &mut objects);
+        let player_action = handle_keys(&mut root, &map, &mut objects, &mut messages);
 
         if player_action == PlayerAction::Exit {
             break;
@@ -117,14 +89,14 @@ fn main() {
         if objects[PLAYER].alive && player_action != PlayerAction::DidntTakeTurn {
             for id in 0..objects.len() {
                 if objects[id].ai.is_some() {
-                    ai_take_turn(id, &map, &mut objects, &fov_map);
+                    ai_take_turn(id, &map, &mut objects, &fov_map, &mut messages);
                 }
             }
         }
     }
 }
 
-fn handle_keys(root: &mut Root, map: &Map,  objects: &mut [Object]) -> PlayerAction {
+fn handle_keys(root: &mut Root, map: &Map,  objects: &mut [Object], messages: &mut Messages) -> PlayerAction {
     use PlayerAction::*;
     use tcod::input::Key;
     use tcod::input::KeyCode::*;
@@ -148,22 +120,22 @@ fn handle_keys(root: &mut Root, map: &Map,  objects: &mut [Object]) -> PlayerAct
         (Key { code: Escape, .. }, _) => Exit, //exit game
 
         (Key { code: Up, .. }, true) => {
-            player_move_or_attack(0, -1, map, objects);
+            player_move_or_attack(0, -1, map, objects, messages);
             TookTurn
         }
 
         (Key { code: Down, .. }, true) => {
-            player_move_or_attack(0, 1, map, objects);
+            player_move_or_attack(0, 1, map, objects, messages);
             TookTurn
         }
 
         (Key { code: Left, .. }, true) => {
-            player_move_or_attack(-1, 0, map, objects);
+            player_move_or_attack(-1, 0, map, objects, messages);
             TookTurn
         }
 
         (Key { code: Right, .. }, true) => {
-            player_move_or_attack(1, 0, map, objects);
+            player_move_or_attack(1, 0, map, objects, messages);
             TookTurn
         }
 
@@ -369,7 +341,7 @@ fn place_objects(room: Rect, objects: &mut Vec<Object>) {
     }
 }
 
-fn player_move_or_attack(dx: i32, dy: i32, map: &Map, objects: &mut [Object]) {
+fn player_move_or_attack(dx: i32, dy: i32, map: &Map, objects: &mut [Object], messages: &mut Messages) {
     //coordinates player is moving to or attacking
     let x = objects[PLAYER].x + dx;
     let y = objects[PLAYER].y + dy;
@@ -383,7 +355,7 @@ fn player_move_or_attack(dx: i32, dy: i32, map: &Map, objects: &mut [Object]) {
     match target_id {
         Some(target_id) => {
             let (player, target) = mut_two(PLAYER, target_id, objects);
-            player.attack(target);
+            player.attack(target, messages);
         }
         None => {
             move_by(PLAYER, dx, dy, map, objects);
@@ -391,7 +363,13 @@ fn player_move_or_attack(dx: i32, dy: i32, map: &Map, objects: &mut [Object]) {
     }
 }
 
-pub fn ai_take_turn(monster_id: usize, map: &Map, objects: &mut [Object], fov_map: &FovMap) {
+pub fn ai_take_turn(
+    monster_id: usize, 
+    map: &Map, 
+    objects: &mut [Object], 
+    fov_map: &FovMap,
+    messages: &mut Messages,
+    ) {
     // a basic monster takes its turn. If you can see it, it can see you
     let (monster_x, monster_y) = objects[monster_id].pos();
     if fov_map.is_in_fov(monster_x, monster_y) {
@@ -402,7 +380,7 @@ pub fn ai_take_turn(monster_id: usize, map: &Map, objects: &mut [Object], fov_ma
         } else if objects[PLAYER].fighter.map_or(false, |f| f.hp > 0) {
             // close enough to attack! (if the player is still alive)
             let (monster, player) = mut_two(monster_id, PLAYER, objects);
-            monster.attack(player);
+            monster.attack(player, messages);
         }
     }
 }
