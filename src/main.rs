@@ -9,7 +9,7 @@ pub use crate::lib::*;
 
 pub use crate::lib::constants::*;
 
-pub use crate::lib::DeathCallback::*;
+//pub use crate::lib::DeathCallback::*;
 
 fn main() {
     let mut root = Root::initializer()
@@ -29,7 +29,7 @@ fn main() {
         hp:         30,
         defense:    2,
         power:      5,
-        on_death:   Player,
+        on_death:   DeathCallback::Player,
     });
 
     let mut objects = vec![player];
@@ -320,7 +320,7 @@ fn place_objects(room: Rect, objects: &mut Vec<Object>) {
                 hp:         10,
                 defense:    0,
                 power:      3,
-                on_death:   Monster,
+                on_death:   DeathCallback::Monster,
             });
             orc.ai = Some(Ai);
             orc
@@ -331,7 +331,7 @@ fn place_objects(room: Rect, objects: &mut Vec<Object>) {
                 hp:         16,
                 defense:    1,
                 power:      4,
-                on_death:    Monster,
+                on_death:    DeathCallback::Monster,
             });
             troll.ai = Some(Ai);
             troll
