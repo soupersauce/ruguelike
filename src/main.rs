@@ -2,6 +2,7 @@ use rand::Rng;
 use tcod::colors::{self, Color};
 use tcod::console::*;
 use tcod::map::{FovAlgorithm, Map as FovMap};
+use tcod::input::{self, Event, Mouse, Key};
 
 mod lib;
 
@@ -54,9 +55,12 @@ fn main() {
 
     let mut messages = vec![];
 
+    let mut mouse = Default::default();
+    let mut key = Default::default();
+
     message(
         &mut messages,
-        "Welcom stranger! Prepare to perish.",
+        "Welcome stranger! Prepare to perish.",
         colors::RED,
     );
 
@@ -64,23 +68,30 @@ fn main() {
         con.clear();
 
         let fov_recompute = previous_player_position != (objects[PLAYER].x, objects[PLAYER].y);
+
+        match input::check_for_event(input::MOUSE | input::KEY_PRESS) {
+            Some((_, Event::Mouse(m))) => mouse = m,
+            Some((_, Event::Key(k))) => key = k,
+            _ => key = Default::default(),
+        }
         
         render_all(
             &mut root, 
             &mut con, 
+            &mut panel,
             &objects, 
             &mut map,
+            &messages,
             &mut fov_map,
             fov_recompute,
-            &mut panel,
-            &messages,
+            mouse,
             );
 
         root.flush();
 
         let player = &mut objects[PLAYER];
         previous_player_position = (player.x, player.y);
-        let player_action = handle_keys(&mut root, &map, &mut objects, &mut messages);
+        let player_action = handle_keys(key, &mut root, &map, &mut objects, &mut messages);
 
         if player_action == PlayerAction::Exit {
             break;
@@ -96,12 +107,16 @@ fn main() {
     }
 }
 
-fn handle_keys(root: &mut Root, map: &Map,  objects: &mut [Object], messages: &mut Messages) -> PlayerAction {
+fn handle_keys(
+    key: Key,
+    root: &mut Root,
+    map: &Map,
+    objects: &mut [Object],
+    messages: &mut Messages
+    ) -> PlayerAction {
     use PlayerAction::*;
-    use tcod::input::Key;
     use tcod::input::KeyCode::*;
 
-    let key = root.wait_for_keypress(true);
     let player_alive = objects[PLAYER].alive;
     match (key, player_alive) {
         (
@@ -142,6 +157,19 @@ fn handle_keys(root: &mut Root, map: &Map,  objects: &mut [Object], messages: &m
         _ => DidntTakeTurn
     }
     
+}
+
+pub fn get_names_under_mouse(mouse: Mouse, objects: &[Object], fov_map: &FovMap) -> String {
+    let (x, y) = (mouse.cx as i32, mouse.cy as i32);
+
+    // create a list with the names of all objects at the mouse's coordinates and in FOV
+    let names = objects
+        .iter()
+        .filter(|obj| {obj.pos() == (x, y) && fov_map.is_in_fov(obj.x, obj.y)})
+        .map(|obj| obj.name.clone())
+        .collect::<Vec<_>>();
+
+    names.join(", ") // Join the names, separated by commas
 }
 
 pub fn make_map(objects: &mut Vec<Object>) -> Map {
@@ -205,14 +233,16 @@ pub fn make_map(objects: &mut Vec<Object>) -> Map {
     (map)
 }
 
-fn render_all(root:             &mut Root, 
-              con:              &mut Offscreen, 
-              objects:          &[Object], 
-              map:              &mut Map,
-              fov_map:          &mut FovMap,
-              fov_recompute:    bool,
-              panel:            &mut Offscreen,
-              messages:         &Messages,
+fn render_all(
+            root:             &mut Root, 
+            con:              &mut Offscreen, 
+            panel:            &mut Offscreen,
+            objects:          &[Object], 
+            map:              &mut Map,
+            messages:         &Messages,
+            fov_map:          &mut FovMap,
+            fov_recompute:    bool,
+            mouse:          Mouse,
       ) {
     if fov_recompute {
         let player = &objects[PLAYER];
@@ -292,6 +322,16 @@ fn render_all(root:             &mut Root,
                 colors::LIGHT_RED, 
                 colors::DARKER_RED,
     );
+
+    panel.set_default_foreground(colors::LIGHT_GREY);
+    panel.print_ex(
+        1,
+        0,
+        BackgroundFlag::None,
+        TextAlignment::Left,
+        get_names_under_mouse(mouse, objects, fov_map),
+    );
+
     blit(
         panel, 
         (0, 0), 
