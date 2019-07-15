@@ -36,3 +36,4 @@ pub static TORCH_RADIUS: i32 = 10;
 pub static PLAYER: usize = 0;
 
 pub static INVENTORY_WIDTH: i32 = 50;
+pub static HEAL_AMOUNT: i32 = 4;

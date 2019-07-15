@@ -68,13 +68,18 @@ pub fn handle_keys(
 
         (Key { printable: 'i', .. }, true) => {
             // show the inventory
-            inventory_menu(
+            let inventory_index = inventory_menu(
                 inventory,
                 "Press the key next to an item to use it, or any other to cancel. \n",
                 root,
             );
-            TookTurn
+
+            if let Some(inventory_index) = inventory_index {
+                use_item(inventory_index, inventory, objects, messages);
+            }
+            DidntTakeTurn
         }
+        
 
         _ => DidntTakeTurn
     }
@@ -585,3 +590,55 @@ fn inventory_menu(inventory: &[Object], header: &str, root: &mut Root)
         None
     }
 }
+
+fn use_item(
+    inventory_id: usize,
+    inventory: &mut Vec<Object>,
+    objects: &mut [Object],
+    messages: &mut Messages,
+) {
+    use Item::*;
+    if let Some(item) = inventory[inventory_id].item {
+        let on_use = match item {
+            Heal => cast_heal,
+        };
+        match on_use(inventory_id, objects, messages) {
+            UseResult::UsedUp => {
+                // destroy after use, unless it was cancelled
+
+                inventory.remove(inventory_id);
+            }
+            UseResult::Cancelled => {
+                message(messages, "Cancelled", colors::WHITE);
+            }
+        }
+    } else {
+        message(
+            messages,
+        format!("The {} cannot be used.",
+                inventory[inventory_id].name),
+                colors::WHITE,
+        );
+    }
+}
+
+fn cast_heal(_inventory_id: usize, objects: &mut [Object], messages: &mut Messages) 
+    -> UseResult {
+        // heal the player
+        if let Some(fighter) = objects[PLAYER].fighter {
+            if fighter.hp == fighter.max_hp {
+                message(messages, "You are already at full health.",
+                        colors::RED);
+                return UseResult::Cancelled;
+            }
+            message(
+                messages,
+                "Your wounds start to feel better!",
+                colors::LIGHT_VIOLET,
+            );
+            objects[PLAYER].heal(HEAL_AMOUNT);
+            return UseResult::UsedUp;
+        }
+        UseResult::Cancelled
+}
+

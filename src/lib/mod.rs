@@ -97,7 +97,14 @@ impl Object {
         }
     }
 
-
+    pub fn heal(&mut self, amount: i32) {
+        if let Some(ref mut fighter) = self.fighter {
+            fighter.hp += amount;
+            if fighter.hp > fighter.max_hp {
+                fighter.hp = fighter.max_hp;
+            }
+        }
+    }
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -210,3 +217,7 @@ pub enum Item {
     Heal,
 }
 
+pub enum UseResult {
+    UsedUp,
+    Cancelled,
+}
