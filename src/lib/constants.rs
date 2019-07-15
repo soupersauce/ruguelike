@@ -1,5 +1,5 @@
-use tcod::colors::{self, Color};
-use tcod::map::{FovAlgorithm, Map as FovMap};
+use tcod::colors::Color;
+use tcod::map::FovAlgorithm;
 
 pub static LIMIT_FPS: i32 = 60;
 
@@ -27,6 +27,7 @@ pub static ROOM_MIN_SIZE: i32 = 6;
 pub static MAX_ROOMS: i32 = 30;
 
 pub static MAX_ROOM_MONSTERS: i32 = 3;
+pub static MAX_ROOM_ITEMS: i32 = 2;
 
 pub static FOV_ALGO: FovAlgorithm = FovAlgorithm::Basic;
 pub static FOV_LIGHT_WALLS: bool = true;
