@@ -34,3 +34,5 @@ pub static FOV_LIGHT_WALLS: bool = true;
 pub static TORCH_RADIUS: i32 = 10;
 
 pub static PLAYER: usize = 0;
+
+pub static INVENTORY_WIDTH: i32 = 50;
