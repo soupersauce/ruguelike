@@ -1,6 +1,8 @@
 use std::cmp;
 use tcod::console::*;
 use tcod::colors::{self, Color};
+use tcod::input::Mouse;
+use tcod::map::Map as FovMap;
 
 pub mod constants;
 pub mod functions;
@@ -8,6 +10,14 @@ pub mod functions;
 // use crate::lib::functions::*;
 pub use crate::lib::constants::*;
 pub use crate::lib::functions::*;
+
+pub struct Tcod {
+    pub root: Root,
+    pub con: Offscreen,
+    pub panel: Offscreen,
+    pub fov: FovMap,
+    pub mouse: Mouse,
+}
 
 #[derive(Debug)]
 pub struct Object {
@@ -215,6 +225,7 @@ pub type Messages = Vec<(String, Color)>;
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum Item {
     Heal,
+    Lightning,
 }
 
 pub enum UseResult {

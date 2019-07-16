@@ -8,7 +8,7 @@ mod lib;
 use crate::lib::*;
 
 fn main() {
-    let mut root = Root::initializer()
+    let root = Root::initializer()
         .font("arial10x10.png", FontLayout::Tcod)
         .font_type(FontType::Greyscale)
         .size(SCREEN_WIDTH, SCREEN_HEIGHT)
@@ -16,9 +16,15 @@ fn main() {
         .init();
     tcod::system::set_fps(LIMIT_FPS);
 
-    let mut con = Offscreen::new(MAP_WIDTH, MAP_HEIGHT);
+    let mut tcod = Tcod {
+        root: root,
+        con: Offscreen::new(MAP_WIDTH, MAP_HEIGHT),
+        panel: Offscreen::new(SCREEN_WIDTH, PANEL_HEIGHT),
+        fov: FovMap::new(MAP_WIDTH, MAP_HEIGHT),
+        mouse: Default::default(),
+    };
 
-    let mut player = Object::new(0, 0, '@', colors::WHITE, "Player", true);
+    let mut player = Object::new(0, 0, '@', colors::WHITE, "player", true);
     player.alive = true;
     player.fighter = Some(Fighter {
         max_hp:     30,
@@ -32,10 +38,9 @@ fn main() {
 
     let mut map = make_map(&mut objects);
 
-    let mut fov_map = FovMap::new(MAP_WIDTH, MAP_HEIGHT);
     for y in 0..MAP_HEIGHT {
         for x in 0..MAP_WIDTH {
-            fov_map.set(
+            tcod.fov.set(
                 x,
                 y,
                 !map[x as usize][y as usize].block_sight,
@@ -46,11 +51,8 @@ fn main() {
 
     let mut previous_player_position = (-1, -1);
 
-    let mut panel = Offscreen::new(SCREEN_WIDTH, PANEL_HEIGHT);
-
     let mut messages = vec![];
 
-    let mut mouse = Default::default();
     let mut key = Default::default();
 
     message(
@@ -61,34 +63,37 @@ fn main() {
 
     let mut inventory = vec![];
 
-    while !root.window_closed() {
-        con.clear();
+    while !tcod.root.window_closed() {
+        tcod.con.clear();
 
         let fov_recompute = previous_player_position != (objects[PLAYER].x, objects[PLAYER].y);
 
         match input::check_for_event(input::MOUSE | input::KEY_PRESS) {
-            Some((_, Event::Mouse(m))) => mouse = m,
+            Some((_, Event::Mouse(m))) => tcod.mouse = m,
             Some((_, Event::Key(k))) => key = k,
             _ => key = Default::default(),
         }
         
         render_all(
-            &mut root, 
-            &mut con, 
-            &mut panel,
+            &mut tcod,
             &objects, 
             &mut map,
             &messages,
-            &mut fov_map,
             fov_recompute,
-            mouse,
             );
 
-        root.flush();
+        tcod.root.flush();
 
         let player = &mut objects[PLAYER];
         previous_player_position = (player.x, player.y);
-        let player_action = handle_keys(key, &mut root, &map, &mut objects, &mut messages, &mut inventory);
+        let player_action = handle_keys(
+            key,
+            &mut tcod,
+            &mut map,
+            &mut objects,
+            &mut messages,
+            &mut inventory
+        );
 
         if player_action == PlayerAction::Exit {
             break;
@@ -97,7 +102,7 @@ fn main() {
         if objects[PLAYER].alive && player_action != PlayerAction::DidntTakeTurn {
             for id in 0..objects.len() {
                 if objects[id].ai.is_some() {
-                    ai_take_turn(id, &map, &mut objects, &fov_map, &mut messages);
+                    ai_take_turn(id, &map, &mut objects, &tcod.fov, &mut messages);
                 }
             }
         }

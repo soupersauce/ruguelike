@@ -37,3 +37,6 @@ pub static PLAYER: usize = 0;
 
 pub static INVENTORY_WIDTH: i32 = 50;
 pub static HEAL_AMOUNT: i32 = 4;
+
+pub static LIGHTNING_DAMAGE: i32 = 20;
+pub static LIGHTNING_RANGE: i32 = 5;
