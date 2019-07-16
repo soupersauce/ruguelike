@@ -71,6 +71,10 @@ impl Object {
         ((dx.pow(2) + dy.pow(2)) as f32).sqrt()
     }
 
+    pub fn distance(&self, x: i32, y: i32) -> f32 {
+        (((x - self.x).pow(2) + (y - self.y).pow(2)) as f32).sqrt()
+    }
+
     pub fn take_damage(&mut self, damage: i32, messages: &mut Messages) {
         //apply damage if possible
         if let Some(fighter) = self.fighter.as_mut() {
@@ -217,8 +221,14 @@ impl DeathCallback {
     }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq)]
-pub struct Ai;
+#[derive(Clone, Debug, PartialEq)]
+pub enum Ai {
+    Basic,
+    Confused {
+        previous_ai: Box<Ai>,
+        num_turns: i32,
+    },
+}
 
 pub type Messages = Vec<(String, Color)>;
 
@@ -226,6 +236,8 @@ pub type Messages = Vec<(String, Color)>;
 pub enum Item {
     Heal,
     Lightning,
+    Confuse,
+    Fireball,
 }
 
 pub enum UseResult {

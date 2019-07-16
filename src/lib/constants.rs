@@ -40,3 +40,9 @@ pub static HEAL_AMOUNT: i32 = 4;
 
 pub static LIGHTNING_DAMAGE: i32 = 20;
 pub static LIGHTNING_RANGE: i32 = 5;
+
+pub static CONFUSE_RANGE: i32 = 8;
+pub static CONFUSE_NUM_TURNS: i32 = 10;
+
+pub static FIREBALL_RADIUS: i32 = 3;
+pub static FIREBALL_DAMAGE: i32 = 12;
