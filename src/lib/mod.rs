@@ -1,4 +1,8 @@
 use std::cmp;
+use std::io::{ Read, Write };
+use std::fs::File;
+use std::error::Error;
+
 use tcod::console::*;
 use tcod::colors::{self, Color};
 use tcod::input::Mouse;
@@ -11,6 +15,16 @@ pub mod functions;
 pub use crate::lib::constants::*;
 pub use crate::lib::functions::*;
 
+pub trait MessageLog {
+    fn add<T: Into<String>>(&mut self, message: T, color: Color);
+}
+
+impl MessageLog for Vec<(String, Color)> {
+    fn add<T: Into<String>>(&mut self, message: T, color: Color) {
+        self.push((message.into(), color));
+    }
+}
+
 pub struct Tcod {
     pub root: Root,
     pub con: Offscreen,
@@ -19,7 +33,14 @@ pub struct Tcod {
     pub mouse: Mouse,
 }
 
-#[derive(Debug)]
+#[derive(Serialize, Deserialize)]
+pub struct Game {
+    pub map: Map,
+    pub log: Messages,
+    pub inventory: Vec<Object>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
 pub struct Object {
     pub x:      i32,
     pub y:      i32,
@@ -75,7 +96,7 @@ impl Object {
         (((x - self.x).pow(2) + (y - self.y).pow(2)) as f32).sqrt()
     }
 
-    pub fn take_damage(&mut self, damage: i32, messages: &mut Messages) {
+    pub fn take_damage(&mut self, damage: i32, game: &mut Game) {
         //apply damage if possible
         if let Some(fighter) = self.fighter.as_mut() {
             if damage > 0 {
@@ -86,25 +107,23 @@ impl Object {
         if let Some(fighter) = self.fighter {
             if fighter.hp <= 0 {
                 self.alive = false;
-                fighter.on_death.callback(self, messages);
+                fighter.on_death.callback(self, game);
             }
         }
     }
 
-    pub fn attack(&mut self, target: &mut Object, messages: &mut Messages) {
+    pub fn attack(&mut self, target: &mut Object, game: &mut Game) {
         // a simple formula for attack damage
         let damage = self.fighter.map_or(0, |f| f.power) - target.fighter.map_or(0, |f| f.defense);
         if damage > 0 {
             //make the target take some damage
-            message(
-                messages,
+            game.log.add(
                 format!("{} attacks {} for {} hit points.",self.name, target.name, damage),
                 colors::WHITE,
             );
-            target.take_damage(damage, messages);
+            target.take_damage(damage, game);
         } else {
-            message(
-                messages,
+            game.log.add(
                 format!("{} attacks {} but it has no effect!", self.name, target.name),
                 colors::WHITE,
             );
@@ -121,7 +140,7 @@ impl Object {
     }
 }
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, Serialize, Deserialize)]
 pub struct Tile {
     pub blocked: bool,
     pub block_sight: bool,
@@ -195,7 +214,7 @@ pub enum PlayerAction {
     Exit,
 }
 
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Fighter {
     pub max_hp:     i32,
     pub hp:         i32,
@@ -204,24 +223,24 @@ pub struct Fighter {
     pub on_death:   DeathCallback,
 }
 
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
 pub enum DeathCallback {
     Player,
     Monster,
 }
 
 impl DeathCallback {
-    fn callback(self, object: &mut Object, messages: &mut Messages) {
+    fn callback(self, object: &mut Object, game: &mut Game) {
         use DeathCallback::*;
-        let callback: fn(&mut Object, &mut Messages) = match self {
+        let callback: fn(&mut Object, &mut Game) = match self {
             Player => player_death,
             Monster => monster_death,
         };
-        callback(object, messages);
+        callback(object, game);
     }
 }
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum Ai {
     Basic,
     Confused {
@@ -232,7 +251,7 @@ pub enum Ai {
 
 pub type Messages = Vec<(String, Color)>;
 
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
 pub enum Item {
     Heal,
     Lightning,
