@@ -71,6 +71,7 @@ pub fn new_game(tcod: &mut Tcod) -> (Vec<Object>, Game) {
         defense:    2,
         power:      5,
         on_death:   DeathCallback::Player,
+        xp:         0,
     });
 
     let mut objects = vec![player];
@@ -79,6 +80,7 @@ pub fn new_game(tcod: &mut Tcod) -> (Vec<Object>, Game) {
         map: make_map(&mut objects),
         log: vec![],
         inventory: vec![],
+        dungeon_level: 1,
     };
 
     initialize_fov(&game.map, tcod);
@@ -89,6 +91,25 @@ pub fn new_game(tcod: &mut Tcod) -> (Vec<Object>, Game) {
     );
 
     (objects, game)
+}
+
+/// Advance to the next level
+fn next_level(tcod: &mut Tcod, objects: &mut Vec<Object>, game: &mut Game) {
+    game.log.add(
+        "You take a moment to rest, and recover your strength.",
+        colors::VIOLET,
+    );
+    let heal_hp = objects[PLAYER].fighter.map_or(0, |f| f.max_hp / 2);
+    objects[PLAYER].heal(heal_hp);
+
+    game.log.add(
+        "After a rare moment of peace, you descend deeper into \
+        the heart of the dungeon...",
+        colors::RED,
+    );
+    game.dungeon_level += 1;
+    game.map = make_map(objects);
+    initialize_fov(&game.map, tcod);
 }
 
 fn initialize_fov(map: &Map, tcod: &mut Tcod) {
@@ -130,6 +151,8 @@ pub fn play_game(objects: &mut Vec<Object>, game: &mut Game, tcod: &mut Tcod) {
             );
 
         tcod.root.flush();
+
+        level_up(objects, game, tcod);
 
         let player = &mut objects[PLAYER];
         previous_player_position = (player.x, player.y);
@@ -191,26 +214,49 @@ pub fn handle_keys(
         }
         (Key { code: Escape, .. }, _) => Exit, //exit game
 
-        (Key { code: Up, .. }, true) => {
+        (Key { code: Up, .. }, true) | (Key { code: NumPad8, .. }, true) => {
             player_move_or_attack(0, -1, objects, game);
             TookTurn
         }
 
-        (Key { code: Down, .. }, true) => {
+        (Key { code: Down, .. }, true) | (Key { code: NumPad2, .. }, true) => {
             player_move_or_attack(0, 1, objects, game);
             TookTurn
         }
 
-        (Key { code: Left, .. }, true) => {
+        (Key { code: Left, .. }, true) | (Key { code: NumPad4, .. }, true) => {
             player_move_or_attack(-1, 0, objects, game);
             TookTurn
         }
 
-        (Key { code: Right, .. }, true) => {
+        (Key { code: Right, .. }, true) | (Key { code: NumPad6, .. }, true) => {
             player_move_or_attack(1, 0, objects, game);
             TookTurn
         }
 
+        (Key { code: Home, .. }, true) | (Key { code: NumPad7, .. }, true) => {
+            player_move_or_attack(-1, -1, objects, game);
+            TookTurn
+        }
+
+        (Key { code: PageUp, .. }, true) | (Key { code: NumPad9, .. }, true) => {
+            player_move_or_attack(1, -1, objects, game);
+            TookTurn
+        }
+
+        (Key { code: End, .. }, true) | (Key { code: NumPad1, .. }, true) => {
+            player_move_or_attack(-1, 1, objects, game);
+            TookTurn
+        }
+
+        (Key { code: PageDown, .. }, true) | (Key { code: NumPad3, .. }, true) => {
+            player_move_or_attack(1, 1, objects, game);
+            TookTurn
+        }
+
+        (Key { code: NumPad5, .. }, true)  => {
+            TookTurn
+        }
         (Key { printable: 'g', .. }, true) => {
             //pick up item
             let item_id = objects
@@ -248,6 +294,40 @@ pub fn handle_keys(
             }
             DidntTakeTurn
         }
+
+        (Key { printable: '.', .. }, true) => {
+            // go down stairs, if the player is on them
+            let player_on_stairs = objects
+                .iter()
+                .any(|object| object.pos() == objects[PLAYER].pos() &&
+                     object.name == "stairs");
+            if player_on_stairs {
+                next_level(tcod, objects, game);
+            }
+            DidntTakeTurn
+        }
+
+        (Key { printable: 'c', .. }, true) => {
+            let player = &objects[PLAYER];
+            let level = player.level;
+            let level_up_xp = LEVEL_UP_BASE + player.level * LEVEL_UP_FACTOR;
+            if let Some(fighter) = player.fighter.as_ref() {
+                let msg = format!(
+                    "Character information
+
+                    Level: {}
+                    Experience: {}
+                    Experience to next level: {}
+
+                    Max HP: {}
+                    Atk: {}
+                    Def: {}",
+                    level, fighter.xp, level_up_xp, fighter.max_hp, fighter.power, fighter.defense
+                );
+                msgbox(&msg, CHARACTER_SCREEN_WIDTH, &mut tcod.root);
+            }
+            DidntTakeTurn
+        }
         
         _ => DidntTakeTurn
     }
@@ -270,6 +350,9 @@ pub fn get_names_under_mouse(mouse: Mouse, objects: &[Object], fov_map: &FovMap)
 pub fn make_map(objects: &mut Vec<Object>) -> Map {
     // fill map with "unblocked" tiles
     let mut map = vec![vec![Tile::wall(); MAP_HEIGHT as usize]; MAP_WIDTH as usize];
+
+    assert_eq!(&objects[PLAYER] as *const _, &objects[0] as *const _);
+    objects.truncate(1);
 
     let mut rooms = vec![];
 
@@ -313,18 +396,28 @@ pub fn make_map(objects: &mut Vec<Object>) -> Map {
                 if rand::random() {
                     // first horizontally, then vertically
                     create_h_tunnel(prev_x, new_x, prev_y, &mut map);
-                    create_v_tunnel(prev_y, new_y, prev_x, &mut map);
+                    create_v_tunnel(prev_y, new_y, new_x, &mut map);
                 } else {
                     // first vertically, then horizontally
                     create_v_tunnel(prev_y, new_y, prev_x, &mut map);
-                    create_h_tunnel(prev_x, new_x, prev_y, &mut map);
+                    create_h_tunnel(prev_x, new_x, new_y, &mut map);
                     
                 }
             }
             rooms.push(new_room);
         }
     }
-
+    let (last_room_x, last_room_y) = rooms[rooms.len() - 1].center();
+    let mut stairs = Object::new(
+        last_room_x,
+        last_room_y,
+        '<',
+        colors::WHITE,
+        "stairs",
+        false,
+    );
+    stairs.always_visible = true;
+    objects.push(stairs);
     (map)
 }
 
@@ -365,16 +458,18 @@ pub fn render_all(
 
     let mut to_draw: Vec<_> = objects
         .iter()
-        .filter(|o| tcod.fov.is_in_fov(o.x, o.y))
+        .filter(|o| {
+            tcod.fov.is_in_fov(o.x, o.y)
+        || (o.always_visible && game.map[o.x as usize][o.y as usize].explored)
+        })
         .collect();
     //sort so that non-blocking objects come first
     to_draw.sort_by(|o1, o2| { o1.blocks.cmp(&o2.blocks) });
     // draw the objects in the list
     for object in &to_draw {
-        if tcod.fov.is_in_fov(object.x, object.y) {
             object.draw(&mut tcod.con);
         }
-    }
+
     blit(
         &mut tcod.con, 
         (0, 0),
@@ -412,6 +507,14 @@ pub fn render_all(
                 max_hp, 
                 colors::LIGHT_RED, 
                 colors::DARKER_RED,
+    );
+
+    tcod.panel.print_ex(
+        1,
+        3,
+        BackgroundFlag::None,
+        TextAlignment::Left,
+        format!("Dungeon level: {}", game.dungeon_level),
     );
 
     tcod.panel.set_default_foreground(colors::LIGHT_GREY);
@@ -452,6 +555,7 @@ fn place_objects(room: Rect, objects: &mut Vec<Object>, map: &Map) {
                 defense:    0,
                 power:      3,
                 on_death:   DeathCallback::Monster,
+                xp:         35,
             });
             orc.ai = Some(Ai::Basic);
             orc
@@ -463,6 +567,7 @@ fn place_objects(room: Rect, objects: &mut Vec<Object>, map: &Map) {
                 defense:    1,
                 power:      4,
                 on_death:    DeathCallback::Monster,
+                xp:         100,
             });
             troll.ai = Some(Ai::Basic);
             troll
@@ -481,7 +586,7 @@ fn place_objects(room: Rect, objects: &mut Vec<Object>, map: &Map) {
         // only place it if the tile is not blocked
         if !is_blocked(x, y, &map, objects) {
             let dice = rand::random::<f32>();
-            let item = if dice < 0.7 {
+            let mut item = if dice < 0.7 {
                 // create a healing object
                 let mut object = Object::new(x, y, '!', colors::VIOLET, "healing potion", false,);
                 object.item = Some(Item::Heal);
@@ -516,6 +621,7 @@ fn place_objects(room: Rect, objects: &mut Vec<Object>, map: &Map) {
                 object.item = Some(Item::Fireball);
                 object
             };
+            item.always_visible = true;
             objects.push(item);
         }
     }
@@ -539,6 +645,54 @@ fn player_move_or_attack(dx: i32, dy: i32, objects: &mut [Object], game: &mut Ga
         }
         None => {
             move_by(PLAYER, dx, dy, &game.map, objects);
+        }
+    }
+}
+
+fn level_up(
+    objects: &mut [Object],
+    game: &mut Game,
+    tcod: &mut Tcod,
+) {
+    let player = &mut objects[PLAYER];
+    let level_up_xp = LEVEL_UP_BASE + player.level * LEVEL_UP_FACTOR;
+
+    if player.fighter.as_ref().map_or(0, |f| f.xp) >= level_up_xp {
+        player.level += 1;
+        game.log.add(
+            format!(
+                "Your battle skills grow stronger! You reached level {}!",
+                player.level
+            ),
+            colors::YELLOW,
+        );
+        let fighter = player.fighter.as_mut().unwrap();
+        let mut choice = None;
+        while choice.is_none() {
+            choice = menu(
+                "Level up! Choose a stat raise: \n",
+                &[
+                format!("Constitution (+20 HP, from {})", fighter.max_hp),
+                format!("Strength (+1 atk, from {})", fighter.power),
+                format!("Agility (+1 def, from {})", fighter.defense),
+                ],
+                LEVEL_SCREEN_WIDTH,
+                &mut tcod.root,
+            );
+        }
+        fighter.xp -= level_up_xp;
+        match choice.unwrap() {
+            0 => {
+                fighter.max_hp += 20;
+                fighter.hp += 20;
+            }
+            1 => {
+                fighter.power +=1;
+            }
+            2 => {
+                fighter.defense += 1;
+            }
+            _ => unreachable!(),
         }
     }
 }
@@ -640,7 +794,10 @@ pub fn pick_item_up(
 
 pub fn monster_death(monster: &mut Object, game: &mut Game) {
     game.log.add(
-        format!("{} is dead!", monster.name), 
+        format!("{} is dead! +{} xp", 
+                monster.name, 
+                monster.fighter.unwrap().xp
+            ), 
         colors::ORANGE,
     );
     monster.char = '%';
@@ -908,7 +1065,9 @@ fn cast_lightning(
             ),
             colors::LIGHT_BLUE,
         );
-        objects[monster_id].take_damage(LIGHTNING_DAMAGE, game);
+        if let Some(xp) = objects[monster_id].take_damage(LIGHTNING_DAMAGE, game) {
+            objects[PLAYER].fighter.as_mut().unwrap().xp += xp;
+        }
         UseResult::UsedUp
     } else {
         game.log.add(
@@ -977,7 +1136,8 @@ fn cast_fireball(
         colors::ORANGE,
     );
 
-    for obj in objects {
+    let mut xp_to_gain = 0;
+    for (id, obj) in objects.iter_mut().enumerate() {
         if obj.distance(x, y) <= FIREBALL_RADIUS as f32 && obj.fighter.is_some() {
             game.log.add(
                 format!(
@@ -986,10 +1146,14 @@ fn cast_fireball(
                 ),
                 colors::ORANGE,
             );
-            obj.take_damage(FIREBALL_DAMAGE, game);
+            if let Some(xp) = obj.take_damage(FIREBALL_DAMAGE, game) {
+                if id != PLAYER {
+                    xp_to_gain += xp;
+                }
+            } 
         }
     }
-
+    objects[PLAYER].fighter.as_mut().unwrap().xp += xp_to_gain;
     UseResult::UsedUp
 }
 

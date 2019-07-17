@@ -46,3 +46,9 @@ pub static CONFUSE_NUM_TURNS: i32 = 10;
 
 pub static FIREBALL_RADIUS: i32 = 3;
 pub static FIREBALL_DAMAGE: i32 = 12;
+
+pub static LEVEL_UP_BASE: i32 = 200;
+pub static LEVEL_UP_FACTOR: i32 = 150;
+
+pub static LEVEL_SCREEN_WIDTH: i32 = 40;
+pub static CHARACTER_SCREEN_WIDTH: i32 = 30;
