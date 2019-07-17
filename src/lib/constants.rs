@@ -26,9 +26,6 @@ pub static ROOM_MAX_SIZE: i32 = 10;
 pub static ROOM_MIN_SIZE: i32 = 6;
 pub static MAX_ROOMS: i32 = 30;
 
-pub static MAX_ROOM_MONSTERS: i32 = 3;
-pub static MAX_ROOM_ITEMS: i32 = 2;
-
 pub static FOV_ALGO: FovAlgorithm = FovAlgorithm::Basic;
 pub static FOV_LIGHT_WALLS: bool = true;
 pub static TORCH_RADIUS: i32 = 10;
@@ -36,16 +33,17 @@ pub static TORCH_RADIUS: i32 = 10;
 pub static PLAYER: usize = 0;
 
 pub static INVENTORY_WIDTH: i32 = 50;
-pub static HEAL_AMOUNT: i32 = 4;
 
-pub static LIGHTNING_DAMAGE: i32 = 20;
+pub static HEAL_AMOUNT: i32 = 40;
+
+pub static LIGHTNING_DAMAGE: i32 = 40;
 pub static LIGHTNING_RANGE: i32 = 5;
 
 pub static CONFUSE_RANGE: i32 = 8;
 pub static CONFUSE_NUM_TURNS: i32 = 10;
 
 pub static FIREBALL_RADIUS: i32 = 3;
-pub static FIREBALL_DAMAGE: i32 = 12;
+pub static FIREBALL_DAMAGE: i32 = 25;
 
 pub static LEVEL_UP_BASE: i32 = 200;
 pub static LEVEL_UP_FACTOR: i32 = 150;

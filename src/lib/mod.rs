@@ -41,6 +41,11 @@ pub struct Game {
     pub dungeon_level: u32,
 }
 
+pub struct Transition {
+    level: u32,
+    value: u32,
+}
+
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Object {
     pub x:              i32,

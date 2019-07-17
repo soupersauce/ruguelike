@@ -1,14 +1,8 @@
 #[macro_use]
 extern crate serde_derive;
 
-use std::io::{ Read, Write };
-use std::fs::File;
-use std::error::Error;
-
-use tcod::colors::{self};
 use tcod::console::*;
 use tcod::map::Map as FovMap;
-use tcod::input::{self, Event};
 
 mod lib;
 
