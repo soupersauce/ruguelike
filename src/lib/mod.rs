@@ -60,6 +60,7 @@ pub struct Object {
     pub item:           Option<Item>,
     pub always_visible: bool,
     pub level:          i32,
+    pub equipment:      Option<Equipment>,
 }
 
 impl Object {
@@ -77,6 +78,7 @@ impl Object {
             item:           None,
             always_visible: false,
             level:          1,
+            equipment:      None,
         }
     }
 
@@ -127,7 +129,7 @@ impl Object {
 
     pub fn attack(&mut self, target: &mut Object, game: &mut Game) {
         // a simple formula for attack damage
-        let damage = self.fighter.map_or(0, |f| f.power) - target.fighter.map_or(0, |f| f.defense);
+        let damage = self.power(game) - target.defense(game);
         if damage > 0 {
             //make the target take some damage
             game.log.add(
@@ -145,14 +147,112 @@ impl Object {
         }
     }
 
-    pub fn heal(&mut self, amount: i32) {
+    pub fn heal(&mut self, amount: i32, game: &Game) {
+        let max_hp = self.max_hp(game);
         if let Some(ref mut fighter) = self.fighter {
             fighter.hp += amount;
-            if fighter.hp > fighter.max_hp {
-                fighter.hp = fighter.max_hp;
+            if fighter.hp > max_hp {
+                fighter.hp = max_hp;
             }
         }
     }
+
+    /// Equip object and show a message about it
+    pub fn equip(&mut self, log: &mut Vec<(String, Color)>) {
+        if self.item.is_none() {
+            log.add(
+                format!("Can't equip {:?} because it's not an item.", self),
+                colors::RED,
+            );
+            return;
+        };
+
+        if let Some(ref mut equipment) = self.equipment {
+            if !equipment.equipped {
+                equipment.equipped = true;
+                log.add(
+                    format!("Equipped {} on {}.", self.name, equipment.slot),
+                    colors::LIGHT_GREEN,
+                );
+            }
+        } else {
+            log.add(
+                format!("Can't equip {:?} because it's not an Equipment.", self),
+                       colors::RED,
+            );
+        }
+    }
+    /// unequip object and show a message about it
+    pub fn unequip(&mut self, log: &mut Vec<(String, Color)>) {
+        if self.item.is_none() {
+            log.add(
+                format!("Can't unequip {:?} because it's not an item.", self),
+                colors::RED,
+            );
+            return;
+        };
+
+        if let Some(ref mut equipment) = self.equipment {
+            if equipment.equipped {
+                equipment.equipped = false;
+                log.add(
+                    format!("Unequipped {} on {}.", self.name, equipment.slot),
+                    colors::LIGHT_YELLOW,
+                );
+            }
+        } else {
+            log.add(
+                format!("Can't unquip {:?} because it's not an Equipment.", self),
+                       colors::RED,
+            );
+        }
+    }
+
+    pub fn power(&self, game: &Game) -> i32 {
+        let base_power = self.fighter.map_or(0, |f| f.base_power);
+        let bonus: i32 = self
+            .get_all_equipped(game)
+            .iter()
+            .map(|e| e.power_bonus)
+            .sum();
+            
+        base_power + bonus
+    }
+
+    pub fn defense(&self, game: &Game) -> i32 {
+        let base_defense = self.fighter.map_or(0, |f| f.base_defense);
+        let bonus: i32 = self
+            .get_all_equipped(game)
+            .iter()
+            .map(|e| e.defense_bonus)
+            .sum();
+            
+        base_defense + bonus
+    }
+
+    pub fn max_hp(&self, game: &Game) -> i32 {
+        let base_max_hp = self.fighter.map_or(0, |f| f.base_max_hp);
+        let bonus: i32 = self
+            .get_all_equipped(game)
+            .iter()
+            .map(|e| e.max_hp_bonus)
+            .sum();
+            
+        base_max_hp + bonus
+    }
+
+    pub fn get_all_equipped(&self, game: &Game) -> Vec<Equipment> {
+        if self.name == "player" {
+            game.inventory
+                .iter()
+                .filter(|item| item.equipment.map_or(false, |e| e.equipped))
+                .map(|item| item.equipment.unwrap())
+                .collect()
+        } else {
+            vec![] //other objects have no equipment
+        }
+    }
+
 }
 
 #[derive(Clone, Copy, Debug, Serialize, Deserialize)]
@@ -231,10 +331,10 @@ pub enum PlayerAction {
 
 #[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Fighter {
-    pub max_hp:     i32,
+    pub base_max_hp:     i32,
     pub hp:         i32,
-    pub defense:    i32,
-    pub power:      i32,
+    pub base_defense:    i32,
+    pub base_power: i32,
     pub on_death:   DeathCallback,
     pub xp:         i32,
 }
@@ -273,9 +373,42 @@ pub enum Item {
     Lightning,
     Confuse,
     Fireball,
+    Sword,
+    Shield,
 }
 
 pub enum UseResult {
     UsedUp,
     Cancelled,
+    UsedAndKept,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
+/// An object that can be equipped, yielding bonuses.
+pub struct Equipment {
+    pub slot: Slot,
+    pub equipped: bool,
+    pub power_bonus: i32,
+    pub defense_bonus: i32,
+    pub max_hp_bonus: i32,
+}
+
+impl Equipment {
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
+pub enum Slot {
+    LeftHand,
+    RightHand,
+    Head,
+}
+
+impl std::fmt::Display for Slot {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        match *self {
+            Slot::LeftHand => write!(f, "left hand"),
+            Slot::RightHand => write!(f, "right hand"),
+            Slot::Head => write!(f, "head"),
+        }
+    }
 }
