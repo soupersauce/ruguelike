@@ -4,9 +4,8 @@ extern crate serde_derive;
 use tcod::console::*;
 use tcod::map::Map as FovMap;
 
-mod lib;
-
-use crate::lib::*;
+mod game;
+use crate::game::*;
 
 fn main() {
     let root = Root::initializer()
