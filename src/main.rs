@@ -4,35 +4,62 @@ extern crate serde_derive;
 use tcod::console::*;
 use tcod::map::Map as FovMap;
 
-use ggez::{graphics, Context, ContextBuilder, GameResult, conf::*};
+use ggez::{Context, ContextBuilder, GameResult, conf::*};
 use ggez::event::{self, EventHandler};
+use ggez::graphics::{self, *};
 
 mod game;
 use crate::game::*;
 
-struct Game {
+type Point2 = cgmath::Point2<f32>;
+type Vector2 = cgmath::Vector2<f32>;
 
+struct Game {
+    canvas: graphics::Canvas,
+    text: graphics:Text,
 }
 
 impl Game {
     pub fn new(_ctx: &mut Context) -> Game {
-        // Load/Create resources such as images here.
-        Game {
-            // TODO
-        }
+            let canvas = graphics::Canvas::with_window_size(ctx)?;
+            let font = graphics::Font::default();
+            let text = graphics::Text::new(("Hello Rugue!", font, 24.0));
+            Ok(Game { canvas, text })
     }
 }
 
 impl EventHandler for Game {
     fn update(&mut self, _ctx: &mut Context) -> GameResult<()> {
-        // Code here
         Ok(())
     }
 
     fn draw(&mut self, ctx: &mut Context) -> GameResult<()> {
-        graphics::clear(ctx, graphics::WHITE);
-        //draw code here
-        graphics::present(ctx)
+        graphics::set_canvas(ctx, Some(&self.canvas));
+        graphics::clear(ctx, [0.1, 0.2, 0.3, 1.0].into());
+        graphics::draw(
+            ctx,
+            &self.text,
+            (Point2::new(400.0, 300.0), graphics::WHITE),
+        )?;
+
+        let window_size = graphics::size(ctx);
+        let scale = Vector2::new(
+            0.5 * window_size.0 as f32 / self.canvas.image().width() as f32,
+            0.5 * window_size.1 as f32 / self.canvas.image().width() as f32,
+        );
+
+        graphics::set_canvas(ctx, None);
+        graphics::clear(ctx, Color::new(0.0, 0.0, 0.0, 1.0));
+        graphics::draw(ctx, &self.canvas, DrawParam::default()
+                       .dest(Point2::new(0.0, 0.0))
+                       .scale(scale),
+                       )?;
+        graphics::draw(ctx, &self.canvas, DrawParam::default()
+                       .dest(Point2::new(400.0, 300.0))
+                       .scale(scale),
+                       )?;
+        graphics::present(ctx)?;
+        Ok(())
     }
 }
 
