@@ -1,10 +1,10 @@
 use std::cmp;
-use std::io::{ Read, Write };
-use std::fs::File;
 use std::error::Error;
+use std::fs::File;
+use std::io::{Read, Write};
 
-use tcod::console::*;
 use tcod::colors::{self, Color};
+use tcod::console::*;
 use tcod::input::Mouse;
 use tcod::map::Map as FovMap;
 
@@ -35,7 +35,7 @@ pub struct Tcod {
 }
 
 #[derive(Serialize, Deserialize)]
-pub struct Game {
+pub struct GameplayState {
     pub map: Map,
     pub log: Messages,
     pub inventory: Vec<Object>,
@@ -56,16 +56,16 @@ pub struct Tile {
 
 impl Tile {
     pub fn empty() -> Self {
-        Tile { 
-            blocked: false, 
+        Tile {
+            blocked: false,
             block_sight: false,
             explored: false,
         }
     }
 
     pub fn wall() -> Self {
-        Tile { 
-            blocked: true, 
+        Tile {
+            blocked: true,
             block_sight: true,
             explored: false,
         }
@@ -83,7 +83,7 @@ pub struct Rect {
 }
 
 impl Rect {
-    pub fn new( x: i32, y: i32, w: i32, h: i32 ) -> Self {
+    pub fn new(x: i32, y: i32, w: i32, h: i32) -> Self {
         Rect {
             x1: x,
             y1: y,
@@ -108,7 +108,7 @@ impl Rect {
 
 pub fn create_room(room: Rect, map: &mut Map) {
     for x in (room.x1 + 1)..room.x2 {
-        for y in (room.y1 +1)..room.y2 {
+        for y in (room.y1 + 1)..room.y2 {
             map[x as usize][y as usize] = Tile::empty();
         }
     }
@@ -123,12 +123,12 @@ pub enum PlayerAction {
 
 #[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Fighter {
-    pub base_max_hp:     i32,
-    pub hp:         i32,
-    pub base_defense:    i32,
+    pub base_max_hp: i32,
+    pub hp: i32,
+    pub base_defense: i32,
     pub base_power: i32,
-    pub on_death:   DeathCallback,
-    pub xp:         i32,
+    pub on_death: DeathCallback,
+    pub xp: i32,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
@@ -138,9 +138,9 @@ pub enum DeathCallback {
 }
 
 impl DeathCallback {
-    fn callback(self, object: &mut Object, game: &mut Game) {
+    fn callback(self, object: &mut Object, game: &mut GameplayState) {
         use DeathCallback::*;
-        let callback: fn(&mut Object, &mut Game) = match self {
+        let callback: fn(&mut Object, &mut GameplayState) = match self {
             Player => player_death,
             Monster => monster_death,
         };
@@ -185,8 +185,7 @@ pub struct Equipment {
     pub max_hp_bonus: i32,
 }
 
-impl Equipment {
-}
+impl Equipment {}
 
 #[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
 pub enum Slot {

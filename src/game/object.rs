@@ -3,40 +3,39 @@ use tcod::colors::{self, Color};
 use super::*;
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Object {
-    pub x:              i32,
-    pub y:              i32,
-    pub char:           char,
-    pub color:          Color,
-    pub name:           String,
-    pub blocks:         bool,
-    pub alive:          bool,
-    pub fighter:        Option<Fighter>,
-    pub ai:             Option<Ai>,
-    pub item:           Option<Item>,
+    pub x: i32,
+    pub y: i32,
+    pub char: char,
+    pub color: Color,
+    pub name: String,
+    pub blocks: bool,
+    pub alive: bool,
+    pub fighter: Option<Fighter>,
+    pub ai: Option<Ai>,
+    pub item: Option<Item>,
     pub always_visible: bool,
-    pub level:          i32,
-    pub equipment:      Option<Equipment>,
+    pub level: i32,
+    pub equipment: Option<Equipment>,
 }
 
 impl Object {
     pub fn new(x: i32, y: i32, char: char, color: Color, name: &str, blocks: bool) -> Self {
-        Object { 
-            x, 
-            y, 
-            char, 
-            color, 
-            name:           name.into(),
+        Object {
+            x,
+            y,
+            char,
+            color,
+            name: name.into(),
             blocks,
-            alive:          false,
-            fighter:        None,
-            ai:             None,
-            item:           None,
+            alive: false,
+            fighter: None,
+            ai: None,
+            item: None,
             always_visible: false,
-            level:          1,
-            equipment:      None,
+            level: 1,
+            equipment: None,
         }
     }
-
 
     /// set the color and then draw the character that represents this object at its position
     pub fn draw(&self, con: &mut Console) {
@@ -63,8 +62,7 @@ impl Object {
         (((x - self.x).pow(2) + (y - self.y).pow(2)) as f32).sqrt()
     }
 
-    pub fn take_damage(&mut self, damage: i32, game: &mut Game) 
-    -> Option<i32> {
+    pub fn take_damage(&mut self, damage: i32, game: &mut GameplayState) -> Option<i32> {
         //apply damage if possible
         if let Some(fighter) = self.fighter.as_mut() {
             if damage > 0 {
@@ -82,13 +80,16 @@ impl Object {
         None
     }
 
-    pub fn attack(&mut self, target: &mut Object, game: &mut Game) {
+    pub fn attack(&mut self, target: &mut Object, game: &mut GameplayState) {
         // a simple formula for attack damage
         let damage = self.power(game) - target.defense(game);
         if damage > 0 {
             //make the target take some damage
             game.log.add(
-                format!("{} attacks {} for {} hit points.",self.name, target.name, damage),
+                format!(
+                    "{} attacks {} for {} hit points.",
+                    self.name, target.name, damage
+                ),
                 colors::WHITE,
             );
             if let Some(xp) = target.take_damage(damage, game) {
@@ -96,13 +97,16 @@ impl Object {
             }
         } else {
             game.log.add(
-                format!("{} attacks {} but it has no effect!", self.name, target.name),
+                format!(
+                    "{} attacks {} but it has no effect!",
+                    self.name, target.name
+                ),
                 colors::WHITE,
             );
         }
     }
 
-    pub fn heal(&mut self, amount: i32, game: &Game) {
+    pub fn heal(&mut self, amount: i32, game: &GameplayState) {
         let max_hp = self.max_hp(game);
         if let Some(ref mut fighter) = self.fighter {
             fighter.hp += amount;
@@ -133,7 +137,7 @@ impl Object {
         } else {
             log.add(
                 format!("Can't equip {:?} because it's not an Equipment.", self),
-                       colors::RED,
+                colors::RED,
             );
         }
     }
@@ -158,45 +162,45 @@ impl Object {
         } else {
             log.add(
                 format!("Can't unquip {:?} because it's not an Equipment.", self),
-                       colors::RED,
+                colors::RED,
             );
         }
     }
 
-    pub fn power(&self, game: &Game) -> i32 {
+    pub fn power(&self, game: &GameplayState) -> i32 {
         let base_power = self.fighter.map_or(0, |f| f.base_power);
         let bonus: i32 = self
             .get_all_equipped(game)
             .iter()
             .map(|e| e.power_bonus)
             .sum();
-            
+
         base_power + bonus
     }
 
-    pub fn defense(&self, game: &Game) -> i32 {
+    pub fn defense(&self, game: &GameplayState) -> i32 {
         let base_defense = self.fighter.map_or(0, |f| f.base_defense);
         let bonus: i32 = self
             .get_all_equipped(game)
             .iter()
             .map(|e| e.defense_bonus)
             .sum();
-            
+
         base_defense + bonus
     }
 
-    pub fn max_hp(&self, game: &Game) -> i32 {
+    pub fn max_hp(&self, game: &GameplayState) -> i32 {
         let base_max_hp = self.fighter.map_or(0, |f| f.base_max_hp);
         let bonus: i32 = self
             .get_all_equipped(game)
             .iter()
             .map(|e| e.max_hp_bonus)
             .sum();
-            
+
         base_max_hp + bonus
     }
 
-    pub fn get_all_equipped(&self, game: &Game) -> Vec<Equipment> {
+    pub fn get_all_equipped(&self, game: &GameplayState) -> Vec<Equipment> {
         if self.name == "player" {
             game.inventory
                 .iter()
@@ -207,6 +211,4 @@ impl Object {
             vec![] //other objects have no equipment
         }
     }
-
 }
-

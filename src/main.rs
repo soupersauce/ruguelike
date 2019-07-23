@@ -4,26 +4,15 @@ extern crate serde_derive;
 use tcod::console::*;
 use tcod::map::Map as FovMap;
 
+use ggez::{self, *};
+
 mod game;
 use crate::game::*;
 
 fn main() {
-    let root = Root::initializer()
-        .font("arial10x10.png", FontLayout::Tcod)
-        .font_type(FontType::Greyscale)
-        .size(SCREEN_WIDTH, SCREEN_HEIGHT)
-        .title("Rust/libtcod tutorial")
-        .init();
-    tcod::system::set_fps(LIMIT_FPS);
+    let (mut ctx, mut event_loop) = ContextBuilder::new("Rugue", "sauceCo")
+        .build()
+        .expect("Error: Could not create context");
 
-    let mut tcod = Tcod {
-        root: root,
-        con: Offscreen::new(MAP_WIDTH, MAP_HEIGHT),
-        panel: Offscreen::new(SCREEN_WIDTH, PANEL_HEIGHT),
-        fov: FovMap::new(MAP_WIDTH, MAP_HEIGHT),
-        mouse: Default::default(),
-    };
-
-    main_menu(&mut tcod);
+    let game = Game::new(&mut ctx);
 }
-
