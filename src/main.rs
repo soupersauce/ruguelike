@@ -4,7 +4,7 @@ extern crate serde_derive;
 use tcod::console::*;
 use tcod::map::Map as FovMap;
 
-use ggez::{graphics, Context, ContextBuilder, GameResult};
+use ggez::{graphics, Context, ContextBuilder, GameResult, conf::*};
 use ggez::event::{self, EventHandler};
 
 mod game;
@@ -37,7 +37,29 @@ impl EventHandler for Game {
 }
 
 fn main() {
+    let window_mode = WindowMode {
+        width: 1280.0,
+        height: 720.0,
+        maximized: false,
+        fullscreen_type: FullscreenType::Windowed,
+        borderless: false,
+        min_width: 0.0,
+        max_width: 0.0,
+        min_height: 0.0,
+        max_height: 0.0,
+        resizable: true,
+    };
+    let window_setup = WindowSetup {
+        title: "Rugue".to_owned(),
+        samples: NumSamples::Zero,
+        vsync: true,
+        icon: "".to_owned(),
+        srgb: true,
+    };
+
     let (mut ctx, mut event_loop) = ContextBuilder::new("Rugue", "sauceCo")
+        .window_mode(window_mode)
+        .window_setup(window_setup)
         .build()
         .expect("Error: Could not create context");
 
