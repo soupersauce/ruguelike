@@ -4,9 +4,14 @@ extern crate serde_derive;
 use tcod::console::*;
 use tcod::map::Map as FovMap;
 
+use std::env;
+use std::io::{Read, Write};
+use std::path;
+use std::str;
+
 use ggez;
 use ggez::nalgebra;
-use ggez::{Context, ContextBuilder, GameResult, conf::*};
+use ggez::{Context, ContextBuilder, GameResult, conf::*, filesystem};
 use ggez::event::{self, EventHandler};
 use ggez::graphics::{self, *};
 
@@ -91,10 +96,17 @@ fn main() -> GameResult {
         srgb: true,
     };
 
-    let (ctx, event_loop) = &mut ContextBuilder::new("Rugue", "sauceCo")
+    let mut cb = ContextBuilder::new("Rugue", "sauceCo")
         .window_mode(window_mode)
-        .window_setup(window_setup)
-        .build()?;
+        .window_setup(window_setup);
+
+    if let Ok(manifest_dir) = env::var("CARGO_MANIFEST_DIR") {
+        let mut path = path::PathBuf::from(manifest_dir);
+        path.push("resources");
+        cb = cb.add_resource_path(path);
+    }
+
+    let (ctx, event_loop) = &mut cb.build()?;
 
     let game = &mut Game::new(ctx)?;
 
