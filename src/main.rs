@@ -4,6 +4,8 @@ extern crate serde_derive;
 use tcod::console::*;
 use tcod::map::Map as FovMap;
 
+use ggez;
+use ggez::nalgebra;
 use ggez::{Context, ContextBuilder, GameResult, conf::*};
 use ggez::event::{self, EventHandler};
 use ggez::graphics::{self, *};
@@ -11,16 +13,16 @@ use ggez::graphics::{self, *};
 mod game;
 use crate::game::*;
 
-type Point2 = cgmath::Point2<f32>;
-type Vector2 = cgmath::Vector2<f32>;
+type Point2 = nalgebra::geometry::Point2<f32>;
+type Vector2 = nalgebra::base::Vector2<f32>;
 
 struct Game {
     canvas: graphics::Canvas,
-    text: graphics:Text,
+    text: graphics::Text,
 }
 
 impl Game {
-    pub fn new(_ctx: &mut Context) -> Game {
+    pub fn new(ctx: &mut Context) -> GameResult<Game> {
             let canvas = graphics::Canvas::with_window_size(ctx)?;
             let font = graphics::Font::default();
             let text = graphics::Text::new(("Hello Rugue!", font, 24.0));
@@ -29,11 +31,11 @@ impl Game {
 }
 
 impl EventHandler for Game {
-    fn update(&mut self, _ctx: &mut Context) -> GameResult<()> {
+    fn update(&mut self, _ctx: &mut Context) -> GameResult {
         Ok(())
     }
 
-    fn draw(&mut self, ctx: &mut Context) -> GameResult<()> {
+    fn draw(&mut self, ctx: &mut Context) -> GameResult {
         graphics::set_canvas(ctx, Some(&self.canvas));
         graphics::clear(ctx, [0.1, 0.2, 0.3, 1.0].into());
         graphics::draw(
@@ -61,9 +63,14 @@ impl EventHandler for Game {
         graphics::present(ctx)?;
         Ok(())
     }
+
+    fn resize_event(&mut self, ctx: &mut Context, width: f32, height: f32) {
+        let new_rect = graphics::Rect::new(0.0, 0.0, width, height);
+        graphics::set_screen_coordinates(ctx, new_rect).unwrap();
+    }
 }
 
-fn main() {
+fn main() -> GameResult {
     let window_mode = WindowMode {
         width: 1280.0,
         height: 720.0,
@@ -84,17 +91,13 @@ fn main() {
         srgb: true,
     };
 
-    let (mut ctx, mut event_loop) = ContextBuilder::new("Rugue", "sauceCo")
+    let (ctx, event_loop) = &mut ContextBuilder::new("Rugue", "sauceCo")
         .window_mode(window_mode)
         .window_setup(window_setup)
-        .build()
-        .expect("Error: Could not create context");
+        .build()?;
 
-    let mut game = Game::new(&mut ctx);
+    let game = &mut Game::new(ctx)?;
 
     // Run!
-    match event::run(&mut ctx, &mut event_loop, &mut game) {
-        Ok(_) => println!("Exited cleanly."),
-        Err(e) => println!("Error occurred: {}", e),
-    }
+    event::run(ctx, event_loop, game) 
 }
