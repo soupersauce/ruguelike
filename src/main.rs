@@ -14,6 +14,7 @@ use ggez::nalgebra;
 use ggez::{Context, ContextBuilder, GameResult, conf::*, filesystem};
 use ggez::event::{self, EventHandler};
 use ggez::graphics::{self, *};
+use ggez::graphics::spritebatch::*;
 
 mod game;
 use crate::game::*;
@@ -28,10 +29,11 @@ struct MainState{
 
 impl MainState{
     pub fn new(ctx: &mut Context) -> GameResult<MainState> {
-            let canvas = graphics::Canvas::with_window_size(ctx)?;
-            let font = graphics::Font::default();
-            let text = graphics::Text::new(("Hello Rugue!", font, 24.0));
-            Ok(MainState{ canvas, text })
+        let canvas = graphics::Canvas::with_window_size(ctx)?;
+        let font = graphics::Font::default();
+        let text = graphics::Text::new(("Hello Rugue!", font, 24.0));
+        let file = filesystem::open(ctx, "/player.png")?;
+        Ok(MainState{ canvas, text, })
     }
 }
 
@@ -43,19 +45,29 @@ impl EventHandler for MainState{
     fn draw(&mut self, ctx: &mut Context) -> GameResult {
         graphics::set_canvas(ctx, Some(&self.canvas));
         graphics::clear(ctx, [0.1, 0.2, 0.3, 1.0].into());
+        let (window_width, window_height) = graphics::size(ctx);
         graphics::draw(
             ctx,
             &self.text,
-            (Point2::new(400.0, 300.0), graphics::WHITE),
+            (Point2::new(0.0, 0.0), graphics::WHITE),
         )?;
 
         // let window_size = graphics::size(ctx);
+        // let scale = Vector2::new(
+        //     0.5 * window_size.0 as f32 / self.canvas.image().width() as f32,
+        //     0.5 * window_size.1 as f32 / self.canvas.image().width() as f32,
+        // );
 
         graphics::set_canvas(ctx, None);
         graphics::clear(ctx, Color::new(0.0, 0.0, 0.0, 1.0));
         graphics::draw(ctx, &self.canvas, DrawParam::default()
                        .dest(Point2::new(0.0, 0.0))
+                       // .scale(scale),
                        )?;
+        // graphics::draw(ctx, &self.canvas, DrawParam::default()
+        //                .dest(Point2::new(400.0, 300.0))
+        //                .scale(scale),
+        //                )?;
         graphics::present(ctx)?;
         Ok(())
     }
@@ -72,12 +84,12 @@ fn main() -> GameResult {
         height: 720.0,
         maximized: false,
         fullscreen_type: FullscreenType::Windowed,
-        borderless: false,
+        borderless: true,
         min_width: 0.0,
         max_width: 0.0,
         min_height: 0.0,
         max_height: 0.0,
-        resizable: true,
+        resizable: false,
     };
     let window_setup = WindowSetup {
         title: "Rugue".to_owned(),
