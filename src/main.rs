@@ -21,21 +21,21 @@ use crate::game::*;
 type Point2 = nalgebra::geometry::Point2<f32>;
 type Vector2 = nalgebra::base::Vector2<f32>;
 
-struct Game {
+struct MainState{
     canvas: graphics::Canvas,
     text: graphics::Text,
 }
 
-impl Game {
-    pub fn new(ctx: &mut Context) -> GameResult<Game> {
+impl MainState{
+    pub fn new(ctx: &mut Context) -> GameResult<MainState> {
             let canvas = graphics::Canvas::with_window_size(ctx)?;
             let font = graphics::Font::default();
             let text = graphics::Text::new(("Hello Rugue!", font, 24.0));
-            Ok(Game { canvas, text })
+            Ok(MainState{ canvas, text })
     }
 }
 
-impl EventHandler for Game {
+impl EventHandler for MainState{
     fn update(&mut self, _ctx: &mut Context) -> GameResult {
         Ok(())
     }
@@ -49,21 +49,12 @@ impl EventHandler for Game {
             (Point2::new(400.0, 300.0), graphics::WHITE),
         )?;
 
-        let window_size = graphics::size(ctx);
-        let scale = Vector2::new(
-            0.5 * window_size.0 as f32 / self.canvas.image().width() as f32,
-            0.5 * window_size.1 as f32 / self.canvas.image().width() as f32,
-        );
+        // let window_size = graphics::size(ctx);
 
         graphics::set_canvas(ctx, None);
         graphics::clear(ctx, Color::new(0.0, 0.0, 0.0, 1.0));
         graphics::draw(ctx, &self.canvas, DrawParam::default()
                        .dest(Point2::new(0.0, 0.0))
-                       .scale(scale),
-                       )?;
-        graphics::draw(ctx, &self.canvas, DrawParam::default()
-                       .dest(Point2::new(400.0, 300.0))
-                       .scale(scale),
                        )?;
         graphics::present(ctx)?;
         Ok(())
@@ -108,7 +99,7 @@ fn main() -> GameResult {
 
     let (ctx, event_loop) = &mut cb.build()?;
 
-    let game = &mut Game::new(ctx)?;
+    let game = &mut MainState::new(ctx)?;
 
     // Run!
     event::run(ctx, event_loop, game) 
