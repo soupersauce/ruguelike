@@ -33,6 +33,7 @@ impl MainState{
         let font = graphics::Font::default();
         let text = graphics::Text::new(("Hello Rugue!", font, 24.0));
         let file = filesystem::open(ctx, "/player.png")?;
+        let player_sprite = Image::new()
         Ok(MainState{ canvas, text, })
     }
 }
@@ -84,7 +85,7 @@ fn main() -> GameResult {
         height: 720.0,
         maximized: false,
         fullscreen_type: FullscreenType::Windowed,
-        borderless: true,
+        borderless: false,
         min_width: 0.0,
         max_width: 0.0,
         min_height: 0.0,
