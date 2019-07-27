@@ -25,6 +25,7 @@ type Vector2 = nalgebra::base::Vector2<f32>;
 struct MainState{
     canvas: graphics::Canvas,
     text: graphics::Text,
+    player_sprite: Image,
 }
 
 impl MainState{
@@ -32,9 +33,10 @@ impl MainState{
         let canvas = graphics::Canvas::with_window_size(ctx)?;
         let font = graphics::Font::default();
         let text = graphics::Text::new(("Hello Rugue!", font, 24.0));
-        let file = filesystem::open(ctx, "/player.png")?;
-        let player_sprite = Image::new()
-        Ok(MainState{ canvas, text, })
+        // let file = filesystem::open(ctx, "/player.png")?;
+        let mut player_sprite = Image::new(ctx, "/player.png")?;
+        player_sprite.set_blend_mode(Some(graphics::BlendMode::Invert));
+        Ok(MainState{ canvas, text, player_sprite})
     }
 }
 
@@ -49,7 +51,7 @@ impl EventHandler for MainState{
         let (window_width, window_height) = graphics::size(ctx);
         graphics::draw(
             ctx,
-            &self.text,
+            &self.player_sprite,
             (Point2::new(0.0, 0.0), graphics::WHITE),
         )?;
 
