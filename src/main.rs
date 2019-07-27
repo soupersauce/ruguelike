@@ -15,6 +15,8 @@ use ggez::{Context, ContextBuilder, GameResult, conf::*, filesystem};
 use ggez::event::{self, EventHandler};
 use ggez::graphics::{self, *};
 use ggez::graphics::spritebatch::*;
+use aseprite;
+use serde_json;
 
 mod game;
 use crate::game::*;
@@ -25,7 +27,7 @@ type Vector2 = nalgebra::base::Vector2<f32>;
 struct MainState{
     canvas: graphics::Canvas,
     text: graphics::Text,
-    player_sprite: Image,
+    spritesheet: SpriteBatch,
 }
 
 impl MainState{
@@ -34,9 +36,9 @@ impl MainState{
         let font = graphics::Font::default();
         let text = graphics::Text::new(("Hello Rugue!", font, 24.0));
         // let file = filesystem::open(ctx, "/player.png")?;
-        let mut player_sprite = Image::new(ctx, "/player.png")?;
-        player_sprite.set_blend_mode(Some(graphics::BlendMode::Invert));
-        Ok(MainState{ canvas, text, player_sprite})
+        let sheetfile = Image::new(ctx, "/sheet.png")?;
+        let mut spritesheet = SpriteBatch::new(sheetfile);
+        Ok(MainState{ canvas, text, spritesheet})
     }
 }
 
@@ -51,7 +53,7 @@ impl EventHandler for MainState{
         let (window_width, window_height) = graphics::size(ctx);
         graphics::draw(
             ctx,
-            &self.player_sprite,
+            &self.spritesheet,
             (Point2::new(0.0, 0.0), graphics::WHITE),
         )?;
 
