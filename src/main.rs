@@ -51,10 +51,13 @@ impl EventHandler for MainState{
         graphics::set_canvas(ctx, Some(&self.canvas));
         graphics::clear(ctx, [0.1, 0.2, 0.3, 1.0].into());
         let (window_width, window_height) = graphics::size(ctx);
+        let param = graphics::DrawParam::new()
+            .dest(Point2::new(0.0, 0.0))
+            .src(graphics::Rect::new_i32(0, 0, 32, 32));
         graphics::draw(
             ctx,
             &self.spritesheet,
-            (Point2::new(0.0, 0.0), graphics::WHITE),
+            param,
         )?;
 
         // let window_size = graphics::size(ctx);
