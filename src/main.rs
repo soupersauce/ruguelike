@@ -27,7 +27,7 @@ type Vector2 = nalgebra::base::Vector2<f32>;
 struct MainState{
     canvas: graphics::Canvas,
     text: graphics::Text,
-    spritesheet: SpriteBatch,
+    assets: Assets,
 }
 
 impl MainState{
@@ -35,10 +35,8 @@ impl MainState{
         let canvas = graphics::Canvas::with_window_size(ctx)?;
         let font = graphics::Font::default();
         let text = graphics::Text::new(("Hello Rugue!", font, 24.0));
-        // let file = filesystem::open(ctx, "/player.png")?;
-        let sheetfile = Image::new(ctx, "/sheet.png")?;
-        let mut spritesheet = SpriteBatch::new(sheetfile);
-        Ok(MainState{ canvas, text, spritesheet})
+        let assets = Assets::new(ctx)?;
+        Ok(MainState{ canvas, text, assets})
     }
 }
 
@@ -56,7 +54,7 @@ impl EventHandler for MainState{
             .src(graphics::Rect::new_i32(0, 0, 32, 32));
         graphics::draw(
             ctx,
-            &self.spritesheet,
+            &self.assets.player_sprite,
             param,
         )?;
 
@@ -83,6 +81,44 @@ impl EventHandler for MainState{
     fn resize_event(&mut self, ctx: &mut Context, width: f32, height: f32) {
         let new_rect = graphics::Rect::new(0.0, 0.0, width, height);
         graphics::set_screen_coordinates(ctx, new_rect).unwrap();
+    }
+}
+
+struct Assets{
+    player_sprite: graphics::Image,
+    orc_sprite: graphics::Image,
+    troll_sprite: graphics::Image,
+    sword_sprite: graphics::Image,
+    dagger_sprite: graphics::Image,
+    shield_sprite: graphics::Image,
+    potion_sprite: graphics::Image,
+    scroll_sprite: graphics::Image,
+    wall_sprite: graphics::Image,
+}
+
+impl Assets {
+    pub fn new(ctx: &mut Context) -> GameResult<Assets> {
+        let player_sprite = graphics::Image::new(ctx, "/player.png")?;
+        let orc_sprite = graphics::Image::new(ctx, "/orc.png")?;
+        let troll_sprite = graphics::Image::new(ctx, "/troll.png")?;
+        let sword_sprite = graphics::Image::new(ctx, "/sword.png")?;
+        let dagger_sprite = graphics::Image::new(ctx, "/dagger.png")?;
+        let shield_sprite = graphics::Image::new(ctx, "/shield.png")?;
+        let potion_sprite = graphics::Image::new(ctx, "/pot.png")?;
+        let scroll_sprite = graphics::Image::new(ctx, "/scroll.png")?;
+        let wall_sprite = graphics::Image::new(ctx, "/wall.png")?;
+
+        Ok(Assets {
+            player_sprite,
+            orc_sprite,
+            troll_sprite,
+            sword_sprite,
+            dagger_sprite,
+            shield_sprite,
+            potion_sprite,
+            scroll_sprite,
+            wall_sprite,
+        })
     }
 }
 
