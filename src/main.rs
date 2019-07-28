@@ -51,7 +51,7 @@ impl EventHandler for MainState{
         let (window_width, window_height) = graphics::size(ctx);
         let param = graphics::DrawParam::new()
             .dest(Point2::new(0.0, 0.0))
-            .src(graphics::Rect::new_i32(0, 0, 32, 32));
+            .scale(nalgebra::Vector2::new(0.5, 0.5));
         graphics::draw(
             ctx,
             &self.assets.player_sprite,
