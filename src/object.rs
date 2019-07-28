@@ -1,12 +1,17 @@
-use tcod::colors::{self, Color};
+// use tcod::colors::{self, Color};
+use ggez::graphics::{self, *};
+use ggez::graphics::Color;
+use ggez::Context;
 
-use super::*;
-#[derive(Debug, Serialize, Deserialize)]
+use crate::gameplaystate::*;
+use crate::constants::*;
+
+#[derive(Debug)]
 pub struct Object {
     pub x: i32,
     pub y: i32,
-    pub char: char,
-    pub color: Color,
+    pub sprite: Box<graphics::Image>,
+    // pub color: Color,
     pub name: String,
     pub blocks: bool,
     pub alive: bool,
@@ -19,12 +24,13 @@ pub struct Object {
 }
 
 impl Object {
-    pub fn new(x: i32, y: i32, char: char, color: Color, name: &str, blocks: bool) -> Self {
+    pub fn new(x: i32, y: i32, sprite: graphics::Image, name: &str, blocks: bool) -> Self {
+        let sprite = Box::new(sprite);
         Object {
             x,
             y,
-            char,
-            color,
+            sprite,
+            // color,
             name: name.into(),
             blocks,
             alive: false,
@@ -37,11 +43,10 @@ impl Object {
         }
     }
 
-    /// set the color and then draw the character that represents this object at its position
-    pub fn draw(&self, con: &mut Console) {
-        con.set_default_foreground(self.color);
-        con.put_char(self.x, self.y, self.char, BackgroundFlag::None);
-    }
+    // /// set the color and then draw the character that represents this object at its position
+    // pub fn draw(&self, ctx: &mut Context) {
+    //     con.put_char(self.x, self.y, self.char, BackgroundFlag::None);
+    // }
 
     pub fn pos(&self) -> (i32, i32) {
         (self.x, self.y)
@@ -90,7 +95,7 @@ impl Object {
                     "{} attacks {} for {} hit points.",
                     self.name, target.name, damage
                 ),
-                colors::WHITE,
+                WHITE,
             );
             if let Some(xp) = target.take_damage(damage, game) {
                 self.fighter.as_mut().unwrap().xp += xp;
@@ -101,7 +106,7 @@ impl Object {
                     "{} attacks {} but it has no effect!",
                     self.name, target.name
                 ),
-                colors::WHITE,
+                WHITE,
             );
         }
     }
@@ -121,7 +126,7 @@ impl Object {
         if self.item.is_none() {
             log.add(
                 format!("Can't equip {:?} because it's not an item.", self),
-                colors::RED,
+                RED,
             );
             return;
         };
@@ -131,13 +136,13 @@ impl Object {
                 equipment.equipped = true;
                 log.add(
                     format!("Equipped {} on {}.", self.name, equipment.slot),
-                    colors::LIGHT_GREEN,
+                    LIGHT_GREEN,
                 );
             }
         } else {
             log.add(
                 format!("Can't equip {:?} because it's not an Equipment.", self),
-                colors::RED,
+                RED,
             );
         }
     }
@@ -146,7 +151,7 @@ impl Object {
         if self.item.is_none() {
             log.add(
                 format!("Can't unequip {:?} because it's not an item.", self),
-                colors::RED,
+                RED,
             );
             return;
         };
@@ -156,13 +161,13 @@ impl Object {
                 equipment.equipped = false;
                 log.add(
                     format!("Unequipped {} on {}.", self.name, equipment.slot),
-                    colors::LIGHT_YELLOW,
+                    LIGHT_YELLOW,
                 );
             }
         } else {
             log.add(
                 format!("Can't unquip {:?} because it's not an Equipment.", self),
-                colors::RED,
+                RED,
             );
         }
     }
@@ -212,3 +217,110 @@ impl Object {
         }
     }
 }
+
+#[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Fighter {
+    pub base_max_hp: i32,
+    pub hp: i32,
+    pub base_defense: i32,
+    pub base_power: i32,
+    pub on_death: DeathCallback,
+    pub xp: i32,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
+pub enum DeathCallback {
+    Player,
+    Monster,
+}
+
+impl DeathCallback {
+    fn callback(self, object: &mut Object, game: &mut GameplayState) {
+        use DeathCallback::*;
+        let callback: fn(&mut Object, &mut GameplayState) = match self {
+            Player => player_death,
+            Monster => monster_death,
+        };
+        callback(object, game);
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum Ai {
+    Basic,
+    Confused {
+        previous_ai: Box<Ai>,
+        num_turns: i32,
+    },
+}
+
+
+#[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
+pub enum Item {
+    Heal,
+    Lightning,
+    Confuse,
+    Fireball,
+    Sword,
+    Shield,
+}
+
+pub enum UseResult {
+    UsedUp,
+    Cancelled,
+    UsedAndKept,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
+/// An object that can be equipped, yielding bonuses.
+pub struct Equipment {
+    pub slot: Slot,
+    pub equipped: bool,
+    pub power_bonus: i32,
+    pub defense_bonus: i32,
+    pub max_hp_bonus: i32,
+}
+
+impl Equipment {}
+
+#[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
+pub enum Slot {
+    LeftHand,
+    RightHand,
+    Head,
+}
+
+impl std::fmt::Display for Slot {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        match *self {
+            Slot::LeftHand => write!(f, "left hand"),
+            Slot::RightHand => write!(f, "right hand"),
+            Slot::Head => write!(f, "head"),
+        }
+    }
+}
+
+pub fn monster_death(monster: &mut Object, game: &mut GameplayState) {
+    game.log.add(
+        format!(
+            "{} is dead! +{} xp",
+            monster.name,
+            monster.fighter.unwrap().xp
+        ),
+        ORANGE,
+    );
+    monster.sprite = game.assets.corpse_sprite;
+    monster.blocks = false;
+    monster.fighter = None;
+    monster.ai = None;
+    monster.name = format!("remains of {}", monster.name);
+}
+
+pub fn player_death(player: &mut Object, game: &mut GameplayState) {
+    // the game ended!
+    game.log.add(format!("You died!"), RED);
+
+    //for added effect, transform the player into a corpse!
+    player.sprite = Box::new(game.assets.corpse_sprite);
+}
+

@@ -1,122 +1,33 @@
 #[macro_use]
 extern crate serde_derive;
 
-use tcod::console::*;
-use tcod::map::Map as FovMap;
+// use tcod::console::*;
+// use tcod::map::Map as FovMap;
 
 use std::env;
-use std::io::{Read, Write};
+// use std::io::{Read, Write};
 use std::path;
-use std::str;
+// use std::str;
 
 use ggez;
 use ggez::nalgebra;
-use ggez::{Context, ContextBuilder, GameResult, conf::*, filesystem};
+use ggez::{Context, ContextBuilder, GameResult, conf::*, };
 use ggez::event::{self, EventHandler};
 use ggez::graphics::{self, *};
-use ggez::graphics::spritebatch::*;
-use aseprite;
-use serde_json;
 
-mod game;
-use crate::game::*;
+mod gameplaystate;
+mod assets;
+mod object;
+mod map;
+mod constants;
+
+use crate::gameplaystate::GameplayState;
 
 type Point2 = nalgebra::geometry::Point2<f32>;
 type Vector2 = nalgebra::base::Vector2<f32>;
 
-struct MainState{
-    canvas: graphics::Canvas,
-    text: graphics::Text,
-    assets: Assets,
-}
 
-impl MainState{
-    pub fn new(ctx: &mut Context) -> GameResult<MainState> {
-        let canvas = graphics::Canvas::with_window_size(ctx)?;
-        let font = graphics::Font::default();
-        let text = graphics::Text::new(("Hello Rugue!", font, 24.0));
-        let assets = Assets::new(ctx)?;
-        Ok(MainState{ canvas, text, assets})
-    }
-}
-
-impl EventHandler for MainState{
-    fn update(&mut self, _ctx: &mut Context) -> GameResult {
-        Ok(())
-    }
-
-    fn draw(&mut self, ctx: &mut Context) -> GameResult {
-        graphics::set_canvas(ctx, Some(&self.canvas));
-        graphics::clear(ctx, [0.1, 0.2, 0.3, 1.0].into());
-        for x in 0..80 {
-            for y in 0..45 {
-                let draw_pos = map_to_window_coords(x, y);
-                let param = graphics::DrawParam::new()
-                    .dest(draw_pos)
-                    .scale(nalgebra::Vector2::new(0.5, 0.5));
-                graphics::draw(
-                    ctx,
-                    &self.assets.player_sprite,
-                    param,
-                )?;
-            }
-        }
-
-        graphics::set_canvas(ctx, None);
-        graphics::clear(ctx, Color::new(0.0, 0.0, 0.0, 1.0));
-        graphics::draw(ctx, &self.canvas, DrawParam::default()
-                       .dest(Point2::new(0.0, 0.0))
-                       // .scale(scale),
-                       )?;
-        graphics::present(ctx)?;
-        Ok(())
-    }
-
-    fn resize_event(&mut self, ctx: &mut Context, width: f32, height: f32) {
-        let new_rect = graphics::Rect::new(0.0, 0.0, width, height);
-        graphics::set_screen_coordinates(ctx, new_rect).unwrap();
-    }
-}
-
-struct Assets{
-    player_sprite: graphics::Image,
-    orc_sprite: graphics::Image,
-    troll_sprite: graphics::Image,
-    sword_sprite: graphics::Image,
-    dagger_sprite: graphics::Image,
-    shield_sprite: graphics::Image,
-    potion_sprite: graphics::Image,
-    scroll_sprite: graphics::Image,
-    wall_sprite: graphics::Image,
-}
-
-impl Assets {
-    pub fn new(ctx: &mut Context) -> GameResult<Assets> {
-        let player_sprite = graphics::Image::new(ctx, "/player.png")?;
-        let orc_sprite = graphics::Image::new(ctx, "/orc.png")?;
-        let troll_sprite = graphics::Image::new(ctx, "/troll.png")?;
-        let sword_sprite = graphics::Image::new(ctx, "/sword.png")?;
-        let dagger_sprite = graphics::Image::new(ctx, "/dagger.png")?;
-        let shield_sprite = graphics::Image::new(ctx, "/shield.png")?;
-        let potion_sprite = graphics::Image::new(ctx, "/pot.png")?;
-        let scroll_sprite = graphics::Image::new(ctx, "/scroll.png")?;
-        let wall_sprite = graphics::Image::new(ctx, "/wall.png")?;
-
-        Ok(Assets {
-            player_sprite,
-            orc_sprite,
-            troll_sprite,
-            sword_sprite,
-            dagger_sprite,
-            shield_sprite,
-            potion_sprite,
-            scroll_sprite,
-            wall_sprite,
-        })
-    }
-}
-
-fn map_to_window_coords(x: i32, y: i32) -> nalgebra::Point2<f32> {
+fn map_to_window_coords(x: i32, y: i32) -> Point2 {
     let xn = x*16;
     let yn = y*16;
     Point2::new(xn as f32, yn as f32)
@@ -157,7 +68,7 @@ fn main() -> GameResult {
 
     graphics::set_drawable_size(ctx, 1280.0, 720.0)?;
 
-    let game = &mut MainState::new(ctx)?;
+    let game = &mut GameplayState::new(ctx)?;
 
     // Run!
     event::run(ctx, event_loop, game) 
