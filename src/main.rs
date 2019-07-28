@@ -48,21 +48,19 @@ impl EventHandler for MainState{
     fn draw(&mut self, ctx: &mut Context) -> GameResult {
         graphics::set_canvas(ctx, Some(&self.canvas));
         graphics::clear(ctx, [0.1, 0.2, 0.3, 1.0].into());
-        let (window_width, window_height) = graphics::size(ctx);
-        let param = graphics::DrawParam::new()
-            .dest(Point2::new(0.0, 0.0))
-            .scale(nalgebra::Vector2::new(0.5, 0.5));
-        graphics::draw(
-            ctx,
-            &self.assets.player_sprite,
-            param,
-        )?;
-
-        // let window_size = graphics::size(ctx);
-        // let scale = Vector2::new(
-        //     0.5 * window_size.0 as f32 / self.canvas.image().width() as f32,
-        //     0.5 * window_size.1 as f32 / self.canvas.image().width() as f32,
-        // );
+        for x in 0..80 {
+            for y in 0..45 {
+                let draw_pos = map_to_window_coords(x, y);
+                let param = graphics::DrawParam::new()
+                    .dest(draw_pos)
+                    .scale(nalgebra::Vector2::new(0.5, 0.5));
+                graphics::draw(
+                    ctx,
+                    &self.assets.player_sprite,
+                    param,
+                )?;
+            }
+        }
 
         graphics::set_canvas(ctx, None);
         graphics::clear(ctx, Color::new(0.0, 0.0, 0.0, 1.0));
@@ -70,10 +68,6 @@ impl EventHandler for MainState{
                        .dest(Point2::new(0.0, 0.0))
                        // .scale(scale),
                        )?;
-        // graphics::draw(ctx, &self.canvas, DrawParam::default()
-        //                .dest(Point2::new(400.0, 300.0))
-        //                .scale(scale),
-        //                )?;
         graphics::present(ctx)?;
         Ok(())
     }
@@ -122,6 +116,12 @@ impl Assets {
     }
 }
 
+fn map_to_window_coords(x: i32, y: i32) -> nalgebra::Point2<f32> {
+    let xn = x*16;
+    let yn = y*16;
+    Point2::new(xn as f32, yn as f32)
+}
+
 fn main() -> GameResult {
     let window_mode = WindowMode {
         width: 1280.0,
@@ -154,6 +154,8 @@ fn main() -> GameResult {
     }
 
     let (ctx, event_loop) = &mut cb.build()?;
+
+    graphics::set_drawable_size(ctx, 1280.0, 720.0)?;
 
     let game = &mut MainState::new(ctx)?;
 
