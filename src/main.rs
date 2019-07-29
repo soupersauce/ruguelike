@@ -27,12 +27,6 @@ type Point2 = nalgebra::geometry::Point2<f32>;
 type Vector2 = nalgebra::base::Vector2<f32>;
 
 
-fn map_to_window_coords(x: i32, y: i32) -> Point2 {
-    let xn = x*16;
-    let yn = y*16;
-    Point2::new(xn as f32, yn as f32)
-}
-
 fn main() -> GameResult {
     let window_mode = WindowMode {
         width: 1280.0,

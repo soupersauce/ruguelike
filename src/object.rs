@@ -244,32 +244,6 @@ impl DeathCallback {
     }
 }
 
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum Ai {
-    Basic,
-    Confused {
-        previous_ai: Box<Ai>,
-        num_turns: i32,
-    },
-}
-
-
-#[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
-pub enum Item {
-    Heal,
-    Lightning,
-    Confuse,
-    Fireball,
-    Sword,
-    Shield,
-}
-
-pub enum UseResult {
-    UsedUp,
-    Cancelled,
-    UsedAndKept,
-}
-
 #[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
 /// An object that can be equipped, yielding bonuses.
 pub struct Equipment {
@@ -334,5 +308,31 @@ pub enum ObjectType {
     ItemShield,
     ItemPotion,
     Stairs,
+}
+
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum Ai {
+    Basic,
+    Confused {
+        previous_ai: Box<Ai>,
+        num_turns: i32,
+    },
+}
+
+
+#[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
+pub enum Item {
+    Heal,
+    Lightning,
+    Confuse,
+    Fireball,
+    Sword,
+    Shield,
+}
+
+pub enum UseResult {
+    UsedUp,
+    Cancelled,
+    UsedAndKept,
 }
 

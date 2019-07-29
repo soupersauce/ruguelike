@@ -1,4 +1,5 @@
-use doryen_fov::FovAlgorithm;
+// use doryen_fov::FovAlgorithm;
+#[allow(dead_code)]
 use ggez::graphics::Color;
 
 pub static LIMIT_FPS: i32 = 60;
@@ -41,6 +42,8 @@ pub static RED: Color = Color { r: 1.0, g: 0.0, b: 0.0, a: 1.0 };
 pub static ORANGE: Color = Color { r: 1.0, g: 0.41, b: 0.0, a: 1.0 };
 pub static LIGHT_GREEN: Color = Color { r: 0.33, g: 1.0, b: 0.19, a: 1.0 };
 pub static LIGHT_YELLOW: Color = Color { r: 0.98, g: 1.0, b: 0.43, a: 1.0 };
+pub static YELLOW: Color = Color { r: 1.0, g: 1.0, b: 0.0, a: 1.0 };
+pub static GREEN: Color = Color { r: 0.0, g: 1.0, b: 0.0, a: 1.0 };
 
 pub static ROOM_MAX_SIZE: i32 = 10;
 pub static ROOM_MIN_SIZE: i32 = 6;

@@ -38,10 +38,3 @@ pub struct Transition {
 
 pub type Map = Vec<Vec<Tile>>;
 
-#[derive(Clone, Copy, Debug, PartialEq)]
-pub enum PlayerAction {
-    TookTurn,
-    DidntTakeTurn,
-    Exit,
-}
-

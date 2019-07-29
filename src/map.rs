@@ -1,20 +1,19 @@
 use std::cmp;
 use rand::Rng;
 use rand::distributions::{IndependentSample, Weighted, WeightedChoice};
-use doryen_fov::MapData as Fov;
+use doryen_fov::MapData as FovMap;
 
 use ggez::Context;
 use ggez::graphics::{self, *};
 
 use crate::object::*;
-use crate::assets::Assets;
 use crate::constants::*;
 
 pub type MapGrid = Vec<Vec<Tile>>;
 
 pub struct Map {
-    map_grid: MapGrid,
-    fov: Fov,
+    pub map_grid: MapGrid,
+    pub fov_map: FovMap,
 }
 
 impl Map {
@@ -85,17 +84,17 @@ impl Map {
         );
         stairs.always_visible = true;
         objects.push(stairs);
-        let mut fov = Fov::new(MAP_HEIGHT as usize, MAP_HEIGHT as usize);
-        Map { map_grid, fov }
+        let fov_map = FovMap::new(MAP_HEIGHT as usize, MAP_HEIGHT as usize);
+        Map { map_grid, fov_map }
     }
 
-    fn initialize_fov(&mut self, ctx: &mut Context) {
+    pub fn initialize_fov(&mut self, ctx: &mut Context) {
         for y in 0..MAP_HEIGHT {
             for x in 0..MAP_WIDTH {
                 if !self.map_grid[x as usize][y as usize].block_sight {
-                    &mut self.fov.set_transparent( x as usize, y as usize, false,);
+                    &mut self.fov_map.set_transparent( x as usize, y as usize, false,);
                 } else {
-                    &mut self.fov.set_transparent( x as usize, y as usize, true,);
+                    &mut self.fov_map.set_transparent( x as usize, y as usize, true,);
                 } 
             }
         }
