@@ -18,7 +18,7 @@ pub struct Map {
 }
 
 impl Map {
-    pub fn new(objects: &mut Vec<Object>, level: u32, assets: Assets) -> Map {
+    pub fn new(objects: &mut Vec<Object>, level: u32) -> Map {
         // fill map with "unblocked" tiles
         let mut map_grid = vec![vec![Tile::wall(); MAP_HEIGHT as usize]; MAP_WIDTH as usize];
 
@@ -47,7 +47,7 @@ impl Map {
                 //paint it to maps tiles
                 create_room(new_room, &mut map_grid);
 
-                place_objects(new_room, objects, &map_grid, level, assets);
+                place_objects(new_room, objects, &map_grid, level);
 
                 let (new_x, new_y) = new_room.center();
 
@@ -79,23 +79,23 @@ impl Map {
         let mut stairs = Object::new(
             last_room_x,
             last_room_y,
-            assets.stairs_sprite,
+            ObjectType::Stairs,
             "stairs",
             false,
         );
         stairs.always_visible = true;
         objects.push(stairs);
-        let fov = Fov::new(MAP_HEIGHT as usize, MAP_HEIGHT as usize);
+        let mut fov = Fov::new(MAP_HEIGHT as usize, MAP_HEIGHT as usize);
         Map { map_grid, fov }
     }
 
-    fn initialize_fov(self, ctx: &mut Context) {
+    fn initialize_fov(&mut self, ctx: &mut Context) {
         for y in 0..MAP_HEIGHT {
             for x in 0..MAP_WIDTH {
                 if !self.map_grid[x as usize][y as usize].block_sight {
-                    self.fov.set_transparent( x as usize, y as usize, false,);
+                    &mut self.fov.set_transparent( x as usize, y as usize, false,);
                 } else {
-                    self.fov.set_transparent( x as usize, y as usize, true,);
+                    &mut self.fov.set_transparent( x as usize, y as usize, true,);
                 } 
             }
         }
@@ -166,7 +166,7 @@ impl Rect {
     }
 }
 
-fn place_objects(room: Rect, objects: &mut Vec<Object>, map: &MapGrid, level: u32, assets: Assets) {
+fn place_objects(room: Rect, objects: &mut Vec<Object>, map: &MapGrid, level: u32) {
     // choose random number of monsters
     let max_monsters = from_dungeon_level(
         &[
@@ -216,7 +216,7 @@ fn place_objects(room: Rect, objects: &mut Vec<Object>, map: &MapGrid, level: u3
 
         let mut monster = match monster_choice.ind_sample(&mut rand::thread_rng()) {
             "orc" => {
-                let mut orc = Object::new(x, y, assets.orc_sprite, "Orc", true);
+                let mut orc = Object::new(x, y, ObjectType::Orc, "Orc", true);
                 orc.fighter = Some(Fighter {
                     base_max_hp: 20,
                     hp: 20,
@@ -229,7 +229,7 @@ fn place_objects(room: Rect, objects: &mut Vec<Object>, map: &MapGrid, level: u3
                 orc
             }
             "troll" => {
-                let mut troll = Object::new(x, y, assets.troll_sprite, "Troll", true);
+                let mut troll = Object::new(x, y, ObjectType::Troll, "Troll", true);
                 troll.fighter = Some(Fighter {
                     base_max_hp: 30,
                     hp: 30,
@@ -321,7 +321,7 @@ fn place_objects(room: Rect, objects: &mut Vec<Object>, map: &MapGrid, level: u3
                 Item::Heal => {
                     // create a healing object
                     let mut object =
-                        Object::new(x, y, assets.potion_sprite,"Healing potion", false);
+                        Object::new(x, y, ObjectType::ItemPotion,"Healing potion", false);
                     object.item = Some(Item::Heal);
                     object
                 }
@@ -329,7 +329,7 @@ fn place_objects(room: Rect, objects: &mut Vec<Object>, map: &MapGrid, level: u3
                     let mut object = Object::new(
                         x,
                         y,
-                        assets.scroll_sprite,
+                        ObjectType::ItemScroll,
                         "Scroll of lightning bolt",
                         false,
                     );
@@ -338,7 +338,7 @@ fn place_objects(room: Rect, objects: &mut Vec<Object>, map: &MapGrid, level: u3
                 }
                 Item::Fireball => {
                     let mut object =
-                        Object::new(x, y, assets.scroll_sprite,"Scroll of fireball", false);
+                        Object::new(x, y, ObjectType::ItemScroll,"Scroll of fireball", false);
                     object.item = Some(Item::Fireball);
                     object
                 }
@@ -346,7 +346,7 @@ fn place_objects(room: Rect, objects: &mut Vec<Object>, map: &MapGrid, level: u3
                     let mut object = Object::new(
                         x,
                         y,
-                        assets.scroll_sprite,
+                        ObjectType::ItemScroll,
                         "Scroll of confusion",
                         false,
                     );
@@ -355,7 +355,7 @@ fn place_objects(room: Rect, objects: &mut Vec<Object>, map: &MapGrid, level: u3
                 }
                 Item::Sword => {
                     // Create a sword
-                    let mut object = Object::new(x, y, assets.stairs_sprite, "sword", false);
+                    let mut object = Object::new(x, y, ObjectType::ItemSword, "sword", false);
                     object.item = Some(Item::Sword);
                     object.equipment = Some(Equipment {
                         equipped: false,
@@ -368,7 +368,7 @@ fn place_objects(room: Rect, objects: &mut Vec<Object>, map: &MapGrid, level: u3
                 }
                 Item::Shield => {
                     // Create a shield
-                    let mut object = Object::new(x, y, assets.shield_sprite, "shield", false);
+                    let mut object = Object::new(x, y, ObjectType::ItemShield, "shield", false);
                     object.item = Some(Item::Shield);
                     object.equipment = Some(Equipment {
                         equipped: false,

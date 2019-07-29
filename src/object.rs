@@ -10,7 +10,7 @@ use crate::constants::*;
 pub struct Object {
     pub x: i32,
     pub y: i32,
-    pub sprite: Box<graphics::Image>,
+    pub object_type: ObjectType,
     // pub color: Color,
     pub name: String,
     pub blocks: bool,
@@ -24,12 +24,11 @@ pub struct Object {
 }
 
 impl Object {
-    pub fn new(x: i32, y: i32, sprite: graphics::Image, name: &str, blocks: bool) -> Self {
-        let sprite = Box::new(sprite);
+    pub fn new(x: i32, y: i32, object_type: ObjectType, name: &str, blocks: bool) -> Self {
         Object {
             x,
             y,
-            sprite,
+            object_type: object_type,
             // color,
             name: name.into(),
             blocks,
@@ -309,7 +308,7 @@ pub fn monster_death(monster: &mut Object, game: &mut GameplayState) {
         ),
         ORANGE,
     );
-    monster.sprite = game.assets.corpse_sprite;
+    monster.alive = false;
     monster.blocks = false;
     monster.fighter = None;
     monster.ai = None;
@@ -321,6 +320,19 @@ pub fn player_death(player: &mut Object, game: &mut GameplayState) {
     game.log.add(format!("You died!"), RED);
 
     //for added effect, transform the player into a corpse!
-    player.sprite = Box::new(game.assets.corpse_sprite);
+    player.alive = false;
+}
+
+#[derive(Debug)]
+pub enum ObjectType {
+    Player,
+    Orc,
+    Troll,
+    ItemScroll,
+    ItemSword,
+    ItemDagger,
+    ItemShield,
+    ItemPotion,
+    Stairs,
 }
 

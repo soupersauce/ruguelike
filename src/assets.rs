@@ -2,6 +2,8 @@ use ggez::graphics::*;
 use ggez::Context;
 use ggez::GameResult;
 
+use crate::object::*;
+
 pub struct Assets {
             pub player_sprite: Image,
             pub orc_sprite: Image,
@@ -43,6 +45,32 @@ impl Assets {
             stairs_sprite, 
             corpse_sprite,
         })
+    }
+
+    pub fn object_image(&mut self, object: &Object) -> &mut Image {
+        match object.object_type {
+            ObjectType::Player => if !object.alive {
+                &mut self.corpse_sprite
+            } else {
+                &mut self.player_sprite
+            },
+            ObjectType::Orc => if !object.alive {
+                &mut self.corpse_sprite
+            } else {
+                &mut self.orc_sprite
+            },
+            ObjectType::Troll => if !object.alive {
+                &mut self.corpse_sprite
+            } else {
+                &mut self.troll_sprite
+            },
+            ObjectType::ItemSword => &mut self.sword_sprite,
+            ObjectType::ItemDagger => &mut self.dagger_sprite,
+            ObjectType::ItemScroll => &mut self.scroll_sprite,
+            ObjectType::ItemShield => &mut self.shield_sprite,
+            ObjectType::ItemPotion => &mut self.potion_sprite,
+            ObjectType::Stairs => &mut self.stairs_sprite,
+        }
     }
 }
 
