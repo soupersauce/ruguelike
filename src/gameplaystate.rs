@@ -32,7 +32,7 @@ pub struct GameplayState {
     pub log: Messages,
     pub inventory: Vec<Object>,
     dungeon_level: u32,
-    objects: Vec<Object>,
+    pub objects: Vec<Object>,
 }
 
 impl EventHandler for GameplayState {
@@ -214,7 +214,7 @@ impl GameplayState {
             }
 
             (KeyCode::C, true) => {
-                let player = self.objects[PLAYER];
+                let player = &self.objects[PLAYER];
                 let level = player.level;
                 let level_up_xp = LEVEL_UP_BASE + player.level * LEVEL_UP_FACTOR;
                 if let Some(fighter) = player.fighter.as_ref() {
@@ -268,8 +268,8 @@ impl GameplayState {
         //attack if target found, move otherwise
         match target_id {
             Some(target_id) => {
-                let (player, target) = mut_two(PLAYER, target_id, &mut self.objects);
-                player.attack(target, self);
+                // let (player, target) = mut_two(PLAYER, target_id, self.objects);
+                self.objects[PLAYER].attack(target_id, self);
             }
             None => {
                 self.move_by(PLAYER, dx, dy);
@@ -351,8 +351,8 @@ impl GameplayState {
                 self.move_towards(monster_id, player_x, player_y);
             } else if self.objects[PLAYER].fighter.map_or(false, |f| f.hp > 0) {
                 // close enough to attack! (if the player is still alive)
-                let (monster, player) = mut_two(monster_id, PLAYER, &mut self.objects);
-                monster.attack(player, self);
+                // let (monster, player) = mut_two(monster_id, PLAYER, &mut self.objects);
+                self.objects[monster_id].attack(PLAYER, self);
             }
         }
         Ai::Basic

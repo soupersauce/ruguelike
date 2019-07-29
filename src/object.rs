@@ -84,26 +84,26 @@ impl Object {
         None
     }
 
-    pub fn attack(&mut self, target: &mut Object, game: &mut GameplayState) {
+    pub fn attack(&mut self, target: usize, game: &mut GameplayState) {
         // a simple formula for attack damage
-        let damage = self.power(game) - target.defense(game);
+        let damage = self.power(game) - game.objects[target].defense(game);
         if damage > 0 {
             //make the target take some damage
             game.log.add(
                 format!(
                     "{} attacks {} for {} hit points.",
-                    self.name, target.name, damage
+                    self.name, game.objects[target].name, damage
                 ),
                 WHITE,
             );
-            if let Some(xp) = target.take_damage(damage, game) {
+            if let Some(xp) = game.objects[target].take_damage(damage, game) {
                 self.fighter.as_mut().unwrap().xp += xp;
             }
         } else {
             game.log.add(
                 format!(
                     "{} attacks {} but it has no effect!",
-                    self.name, target.name
+                    self.name, game.objects[target].name
                 ),
                 WHITE,
             );

@@ -618,19 +618,6 @@ fn toggle_equipment(
     UseResult::UsedAndKept
 }
 
-pub fn get_equipped_in_slot(slot: Slot, inventory: &[Object]) -> Option<usize> {
-    for (inventory_id, item) in inventory.iter().enumerate() {
-        if item
-            .equipment
-            .as_ref()
-            .map_or(false, |e| e.equipped && e.slot == slot)
-        {
-            return Some(inventory_id);
-        }
-    }
-    None
-}
-
 fn closest_monster(max_range: i32, objects: &mut [Object], tcod: &Tcod) -> Option<usize> {
     let mut closest_enemy = None;
     let mut closest_dist = (max_range + 1) as f32; //start with slightly more than max_range
