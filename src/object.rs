@@ -1,3 +1,4 @@
+use std::borrow::BorrowMut;
 // use tcod::colors::{self, Color};
 use ggez::graphics::{self, *};
 use ggez::graphics::Color;
@@ -66,7 +67,7 @@ impl Object {
         (((x - self.x).pow(2) + (y - self.y).pow(2)) as f32).sqrt()
     }
 
-    pub fn take_damage(&mut self, damage: i32, game: &mut GameplayState) -> Option<i32> {
+    pub fn take_damage(&mut self, damage: i32, log: &mut Messages) -> Option<i32> {
         //apply damage if possible
         if let Some(fighter) = self.fighter.as_mut() {
             if damage > 0 {
@@ -77,41 +78,41 @@ impl Object {
         if let Some(fighter) = self.fighter {
             if fighter.hp <= 0 {
                 self.alive = false;
-                fighter.on_death.callback(self, game);
+                fighter.on_death.callback(self, log);
                 return Some(fighter.xp);
             }
         }
         None
     }
 
-    pub fn attack(&mut self, target: usize, game: &mut GameplayState) {
+    pub fn attack(&mut self, target: &mut Object, inventory: &Vec<Object>, log: &mut Messages) {
         // a simple formula for attack damage
-        let damage = self.power(game) - game.objects[target].defense(game);
+        let damage = self.power(inventory) - target.defense(inventory);
         if damage > 0 {
             //make the target take some damage
-            game.log.add(
+            log.add(
                 format!(
                     "{} attacks {} for {} hit points.",
-                    self.name, game.objects[target].name, damage
+                    self.name, target.name, damage
                 ),
                 WHITE,
             );
-            if let Some(xp) = game.objects[target].take_damage(damage, game) {
+            if let Some(xp) = target.take_damage(damage, log) {
                 self.fighter.as_mut().unwrap().xp += xp;
             }
         } else {
-            game.log.add(
+            log.add(
                 format!(
                     "{} attacks {} but it has no effect!",
-                    self.name, game.objects[target].name
+                    self.name, target.name
                 ),
                 WHITE,
             );
         }
     }
 
-    pub fn heal(&mut self, amount: i32, game: &GameplayState) {
-        let max_hp = self.max_hp(game);
+    pub fn heal(&mut self, amount: i32, inventory: &Vec<Object>) {
+        let max_hp = self.max_hp(inventory);
         if let Some(ref mut fighter) = self.fighter {
             fighter.hp += amount;
             if fighter.hp > max_hp {
@@ -121,7 +122,7 @@ impl Object {
     }
 
     /// Equip object and show a message about it
-    pub fn equip(&mut self, log: &mut Vec<(String, Color)>) {
+    pub fn equip(&mut self, log: &mut Messages) {
         if self.item.is_none() {
             log.add(
                 format!("Can't equip {:?} because it's not an item.", self),
@@ -171,10 +172,10 @@ impl Object {
         }
     }
 
-    pub fn power(&self, game: &GameplayState) -> i32 {
+    pub fn power(&self, inventory: &Vec<Object>) -> i32 {
         let base_power = self.fighter.map_or(0, |f| f.base_power);
         let bonus: i32 = self
-            .get_all_equipped(game)
+            .get_all_equipped(inventory)
             .iter()
             .map(|e| e.power_bonus)
             .sum();
@@ -182,10 +183,10 @@ impl Object {
         base_power + bonus
     }
 
-    pub fn defense(&self, game: &GameplayState) -> i32 {
+    pub fn defense(&self, inventory: &Vec<Object>) -> i32 {
         let base_defense = self.fighter.map_or(0, |f| f.base_defense);
         let bonus: i32 = self
-            .get_all_equipped(game)
+            .get_all_equipped(inventory)
             .iter()
             .map(|e| e.defense_bonus)
             .sum();
@@ -193,10 +194,10 @@ impl Object {
         base_defense + bonus
     }
 
-    pub fn max_hp(&self, game: &GameplayState) -> i32 {
+    pub fn max_hp(&self, inventory: &Vec<Object>) -> i32 {
         let base_max_hp = self.fighter.map_or(0, |f| f.base_max_hp);
         let bonus: i32 = self
-            .get_all_equipped(game)
+            .get_all_equipped(inventory)
             .iter()
             .map(|e| e.max_hp_bonus)
             .sum();
@@ -204,9 +205,9 @@ impl Object {
         base_max_hp + bonus
     }
 
-    pub fn get_all_equipped(&self, game: &GameplayState) -> Vec<Equipment> {
+    pub fn get_all_equipped(&self, inventory: &Vec<Object>) -> Vec<Equipment> {
         if self.name == "player" {
-            game.inventory
+            inventory
                 .iter()
                 .filter(|item| item.equipment.map_or(false, |e| e.equipped))
                 .map(|item| item.equipment.unwrap())
@@ -234,13 +235,13 @@ pub enum DeathCallback {
 }
 
 impl DeathCallback {
-    fn callback(self, object: &mut Object, game: &mut GameplayState) {
+    fn callback(self, object: &mut Object, log: &mut Messages) {
         use DeathCallback::*;
-        let callback: fn(&mut Object, &mut GameplayState) = match self {
+        let callback: fn(&mut Object, &mut Messages) = match self {
             Player => player_death,
             Monster => monster_death,
         };
-        callback(object, game);
+        callback(object, log);
     }
 }
 
@@ -273,8 +274,8 @@ impl std::fmt::Display for Slot {
     }
 }
 
-pub fn monster_death(monster: &mut Object, game: &mut GameplayState) {
-    game.log.add(
+pub fn monster_death(monster: &mut Object, log: &mut Messages) {
+    log.add(
         format!(
             "{} is dead! +{} xp",
             monster.name,
@@ -289,9 +290,9 @@ pub fn monster_death(monster: &mut Object, game: &mut GameplayState) {
     monster.name = format!("remains of {}", monster.name);
 }
 
-pub fn player_death(player: &mut Object, game: &mut GameplayState) {
+pub fn player_death(player: &mut Object, log: &mut Messages) {
     // the game ended!
-    game.log.add(format!("You died!"), RED);
+    log.add(format!("You died!"), RED);
 
     //for added effect, transform the player into a corpse!
     player.alive = false;
