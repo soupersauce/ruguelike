@@ -1,13 +1,13 @@
-use std::cmp;
-use rand::Rng;
-use rand::distributions::{IndependentSample, Weighted, WeightedChoice};
 use doryen_fov::MapData as FovMap;
+use rand::distributions::{IndependentSample, Weighted, WeightedChoice};
+use rand::Rng;
+use std::cmp;
 
-use ggez::Context;
 use ggez::graphics::{self, *};
+use ggez::Context;
 
-use crate::object::*;
 use crate::constants::*;
+use crate::object::*;
 
 pub type MapGrid = Vec<Vec<Tile>>;
 
@@ -92,16 +92,14 @@ impl Map {
         for y in 0..MAP_HEIGHT {
             for x in 0..MAP_WIDTH {
                 if !self.map_grid[x as usize][y as usize].block_sight {
-                    &mut self.fov_map.set_transparent( x as usize, y as usize, false,);
+                    &mut self.fov_map.set_transparent(x as usize, y as usize, false);
                 } else {
-                    &mut self.fov_map.set_transparent( x as usize, y as usize, true,);
-                } 
+                    &mut self.fov_map.set_transparent(x as usize, y as usize, true);
+                }
             }
         }
         graphics::clear(ctx, BLACK);
     }
-
-
 }
 pub struct Transition {
     level: u32,
@@ -320,7 +318,7 @@ fn place_objects(room: Rect, objects: &mut Vec<Object>, map: &MapGrid, level: u3
                 Item::Heal => {
                     // create a healing object
                     let mut object =
-                        Object::new(x, y, ObjectType::ItemPotion,"Healing potion", false);
+                        Object::new(x, y, ObjectType::ItemPotion, "Healing potion", false);
                     object.item = Some(Item::Heal);
                     object
                 }
@@ -337,18 +335,13 @@ fn place_objects(room: Rect, objects: &mut Vec<Object>, map: &MapGrid, level: u3
                 }
                 Item::Fireball => {
                     let mut object =
-                        Object::new(x, y, ObjectType::ItemScroll,"Scroll of fireball", false);
+                        Object::new(x, y, ObjectType::ItemScroll, "Scroll of fireball", false);
                     object.item = Some(Item::Fireball);
                     object
                 }
                 Item::Confuse => {
-                    let mut object = Object::new(
-                        x,
-                        y,
-                        ObjectType::ItemScroll,
-                        "Scroll of confusion",
-                        false,
-                    );
+                    let mut object =
+                        Object::new(x, y, ObjectType::ItemScroll, "Scroll of confusion", false);
                     object.item = Some(Item::Confuse);
                     object
                 }
@@ -424,4 +417,3 @@ pub fn is_blocked(x: i32, y: i32, map: &MapGrid, objects: &[Object]) -> bool {
         .iter()
         .any(|object| object.blocks && object.pos() == (x, y))
 }
-

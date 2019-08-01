@@ -5,18 +5,18 @@ use ggez::GameResult;
 use crate::object::*;
 
 pub struct Assets {
-            pub player_sprite: Image,
-            pub orc_sprite: Image,
-            pub troll_sprite: Image,
-            pub sword_sprite: Image,
-            pub dagger_sprite: Image,
-            pub shield_sprite: Image,
-            pub potion_sprite: Image,
-            pub scroll_sprite: Image,
-            pub wall_sprite: Image,
-            pub stairs_sprite: Image,
-            pub corpse_sprite: Image,
-        }
+    pub player_sprite: Image,
+    pub orc_sprite: Image,
+    pub troll_sprite: Image,
+    pub sword_sprite: Image,
+    pub dagger_sprite: Image,
+    pub shield_sprite: Image,
+    pub potion_sprite: Image,
+    pub scroll_sprite: Image,
+    pub wall_sprite: Image,
+    pub stairs_sprite: Image,
+    pub corpse_sprite: Image,
+}
 
 impl Assets {
     pub fn new(ctx: &mut Context) -> GameResult<Assets> {
@@ -42,28 +42,34 @@ impl Assets {
             potion_sprite,
             scroll_sprite,
             wall_sprite,
-            stairs_sprite, 
+            stairs_sprite,
             corpse_sprite,
         })
     }
 
     pub fn object_image(&mut self, object: &Object) -> &mut Image {
         match object.object_type {
-            ObjectType::Player => if !object.alive {
-                &mut self.corpse_sprite
-            } else {
-                &mut self.player_sprite
-            },
-            ObjectType::Orc => if !object.alive {
-                &mut self.corpse_sprite
-            } else {
-                &mut self.orc_sprite
-            },
-            ObjectType::Troll => if !object.alive {
-                &mut self.corpse_sprite
-            } else {
-                &mut self.troll_sprite
-            },
+            ObjectType::Player => {
+                if !object.alive {
+                    &mut self.corpse_sprite
+                } else {
+                    &mut self.player_sprite
+                }
+            }
+            ObjectType::Orc => {
+                if !object.alive {
+                    &mut self.corpse_sprite
+                } else {
+                    &mut self.orc_sprite
+                }
+            }
+            ObjectType::Troll => {
+                if !object.alive {
+                    &mut self.corpse_sprite
+                } else {
+                    &mut self.troll_sprite
+                }
+            }
             ObjectType::ItemSword => &mut self.sword_sprite,
             ObjectType::ItemDagger => &mut self.dagger_sprite,
             ObjectType::ItemScroll => &mut self.scroll_sprite,
@@ -73,4 +79,3 @@ impl Assets {
         }
     }
 }
-

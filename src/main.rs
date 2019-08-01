@@ -10,22 +10,21 @@ use std::path;
 // use std::str;
 
 use ggez;
-use ggez::nalgebra;
-use ggez::{Context, ContextBuilder, GameResult, conf::*, };
 use ggez::event::{self, EventHandler};
 use ggez::graphics::{self, *};
+use ggez::nalgebra;
+use ggez::{conf::*, Context, ContextBuilder, GameResult};
 
-mod gameplaystate;
 mod assets;
-mod object;
-mod map;
 mod constants;
+mod gameplaystate;
+mod map;
+mod object;
 
 use crate::gameplaystate::GameplayState;
 
 type Point2 = nalgebra::geometry::Point2<f32>;
 type Vector2 = nalgebra::base::Vector2<f32>;
-
 
 fn main() -> GameResult {
     let window_mode = WindowMode {
@@ -65,5 +64,5 @@ fn main() -> GameResult {
     let game = &mut GameplayState::new(ctx)?;
 
     // Run!
-    event::run(ctx, event_loop, game) 
+    event::run(ctx, event_loop, game)
 }

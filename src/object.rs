@@ -1,11 +1,11 @@
 use std::borrow::BorrowMut;
 // use tcod::colors::{self, Color};
-use ggez::graphics::{self, *};
 use ggez::graphics::Color;
+use ggez::graphics::{self, *};
 use ggez::Context;
 
-use crate::gameplaystate::*;
 use crate::constants::*;
+use crate::gameplaystate::*;
 
 #[derive(Debug)]
 pub struct Object {
@@ -320,7 +320,6 @@ pub enum Ai {
     },
 }
 
-
 #[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
 pub enum Item {
     Heal,
@@ -336,4 +335,3 @@ pub enum UseResult {
     Cancelled,
     UsedAndKept,
 }
-

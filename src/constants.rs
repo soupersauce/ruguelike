@@ -18,7 +18,12 @@ pub static MSG_HEIGHT: usize = PANEL_HEIGHT as usize - 1;
 pub static MAP_WIDTH: i32 = 80;
 pub static MAP_HEIGHT: i32 = 45;
 
-pub const COLOR_DARK_WALL: Color = Color {r: 0.0, g: 0.0, b: 0.39, a: 1.0};
+pub const COLOR_DARK_WALL: Color = Color {
+    r: 0.0,
+    g: 0.0,
+    b: 0.39,
+    a: 1.0,
+};
 pub static COLOR_LIGHT_WALL: Color = Color {
     r: 0.50,
     g: 0.43,
@@ -38,12 +43,42 @@ pub static COLOR_LIGHT_GROUND: Color = Color {
     a: 1.0,
 };
 
-pub static RED: Color = Color { r: 1.0, g: 0.0, b: 0.0, a: 1.0 };
-pub static ORANGE: Color = Color { r: 1.0, g: 0.41, b: 0.0, a: 1.0 };
-pub static LIGHT_GREEN: Color = Color { r: 0.33, g: 1.0, b: 0.19, a: 1.0 };
-pub static LIGHT_YELLOW: Color = Color { r: 0.98, g: 1.0, b: 0.43, a: 1.0 };
-pub static YELLOW: Color = Color { r: 1.0, g: 1.0, b: 0.0, a: 1.0 };
-pub static GREEN: Color = Color { r: 0.0, g: 1.0, b: 0.0, a: 1.0 };
+pub static RED: Color = Color {
+    r: 1.0,
+    g: 0.0,
+    b: 0.0,
+    a: 1.0,
+};
+pub static ORANGE: Color = Color {
+    r: 1.0,
+    g: 0.41,
+    b: 0.0,
+    a: 1.0,
+};
+pub static LIGHT_GREEN: Color = Color {
+    r: 0.33,
+    g: 1.0,
+    b: 0.19,
+    a: 1.0,
+};
+pub static LIGHT_YELLOW: Color = Color {
+    r: 0.98,
+    g: 1.0,
+    b: 0.43,
+    a: 1.0,
+};
+pub static YELLOW: Color = Color {
+    r: 1.0,
+    g: 1.0,
+    b: 0.0,
+    a: 1.0,
+};
+pub static GREEN: Color = Color {
+    r: 0.0,
+    g: 1.0,
+    b: 0.0,
+    a: 1.0,
+};
 
 pub static ROOM_MAX_SIZE: i32 = 10;
 pub static ROOM_MIN_SIZE: i32 = 6;
