@@ -2,8 +2,8 @@ use std::cmp;
 
 use rand::Rng;
 
-use ggez::{self, Context, graphics, event::EventHandler, GameResult};
-use ggez::graphics::Color;
+use ggez::{self, Context, event::EventHandler, GameResult};
+use ggez::graphics::{self, Color, Image, spritebatch, DrawParam};
 use ggez::input::*;
 use ggez::input::keyboard::{KeyCode, KeyMods};
 use ggez::nalgebra::{core, geometry};
@@ -33,6 +33,7 @@ pub struct GameplayState {
     pub inventory: Vec<Object>,
     dungeon_level: u32,
     objects: Vec<Object>,
+    spritebatch: spritebatch::SpriteBatch,
 }
 
 impl EventHandler for GameplayState {
@@ -44,7 +45,7 @@ impl EventHandler for GameplayState {
         graphics::clear(ctx, graphics::BLACK);
 
         self.draw_map(ctx);
-        self.draw_objects(ctx);
+        self.draw_objects_sb(ctx);
 
         graphics::present(ctx)?;
         Ok(())
@@ -60,6 +61,8 @@ impl GameplayState {
     pub fn new(ctx: &mut Context) -> GameResult<GameplayState> {
         let log = vec![];
         let assets = Assets::new(ctx)?;
+        let sprite_sheet = graphics::Image::new(ctx, "/sheet.png")?;
+        let spritebatch = graphics::spritebatch::SpriteBatch::new(sprite_sheet);
         let mut player = Object::new(0, 0, ObjectType::Player, "player", true);
         let dungeon_level = 1;
         player.alive = true;
@@ -77,7 +80,7 @@ impl GameplayState {
         let mut map = Map::new(&mut objects, dungeon_level);
         //map.initialize_fov(ctx);
         let inventory = vec![];
-        Ok(GameplayState{ canvas, assets, map, log, inventory, dungeon_level, objects})
+        Ok(GameplayState{ canvas, assets, map, log, inventory, dungeon_level, objects, spritebatch})
     }
 
     fn draw_objects(&mut self, ctx: &mut Context) {
@@ -89,6 +92,127 @@ impl GameplayState {
             
             graphics::draw(ctx, sprite, params);
         }
+    }
+
+    fn draw_objects_sb(&mut self, ctx: &mut Context) {
+        let spritewidth = 32;
+        let corpse = 0;
+        let dagger = 1;
+        let orc = 2;
+        let player = 3;
+        let potion = 4;
+        let scroll = 5;
+        let shield = 6;
+        let stairs = 7;
+        let sword = 8;
+        let troll = 9;
+        let _wall = 10;
+
+        for o in &self.objects {
+            match o.object_type {
+                    ObjectType::Player => {
+                        if !o.alive {
+                            let p = DrawParam::default()
+                                .src(rect_from_sprite_offset(corpse, spritewidth))
+                                .dest(map_to_window_coords(o.x, o.y))
+                                .scale(core::Vector2::new(0.5, 0.5));
+
+                                    self.spritebatch.add(p);
+                        } else {
+                            let p = DrawParam::default()
+                                .src(rect_from_sprite_offset(player, spritewidth))
+                                .dest(map_to_window_coords(o.x, o.y))
+                                .scale(core::Vector2::new(0.5, 0.5));
+
+                                    self.spritebatch.add(p);
+                                }
+                    },
+                    ObjectType::Orc => {
+                        if !o.alive {
+                            let p = DrawParam::default()
+                                .src(rect_from_sprite_offset(corpse, spritewidth))
+                                .dest(map_to_window_coords(o.x, o.y))
+                                .scale(core::Vector2::new(0.5, 0.5));
+
+                                    self.spritebatch.add(p);
+                        } else {
+                            let p = DrawParam::default()
+                                .src(rect_from_sprite_offset(orc, spritewidth))
+                                .dest(map_to_window_coords(o.x, o.y))
+                                .scale(core::Vector2::new(0.5, 0.5));
+
+                                    self.spritebatch.add(p);
+                        } 
+                    },
+                    ObjectType::Troll => {
+                        if !o.alive {
+                            let p = DrawParam::default()
+                                .src(rect_from_sprite_offset(corpse, spritewidth))
+                                .dest(map_to_window_coords(o.x, o.y))
+                                .scale(core::Vector2::new(0.5, 0.5));
+
+                                    self.spritebatch.add(p);
+                        } else {
+                            let p = DrawParam::default()
+                                .src(rect_from_sprite_offset(troll, spritewidth))
+                                .dest(map_to_window_coords(o.x, o.y))
+                                .scale(core::Vector2::new(0.5, 0.5));
+
+                                    self.spritebatch.add(p);
+                        }
+                    },
+                    ObjectType::Stairs => {
+                                let p = DrawParam::default()
+                                    .src(rect_from_sprite_offset(stairs, spritewidth))
+                                    .dest(map_to_window_coords(o.x, o.y))
+                                    .scale(core::Vector2::new(0.5, 0.5));
+
+                                    self.spritebatch.add(p);
+                            },
+                    ObjectType::ItemSword => {
+                                let p = DrawParam::default()
+                                    .src(rect_from_sprite_offset(sword, spritewidth))
+                                    .dest(map_to_window_coords(o.x, o.y))
+                                    .scale(core::Vector2::new(0.5, 0.5));
+
+                                    self.spritebatch.add(p);
+                            },
+                    ObjectType::ItemDagger => {
+                                let p = DrawParam::default()
+                                    .src(rect_from_sprite_offset(dagger, spritewidth))
+                                    .dest(map_to_window_coords(o.x, o.y))
+                                    .scale(core::Vector2::new(0.5, 0.5));
+
+                                    self.spritebatch.add(p);
+                            },
+                    ObjectType::ItemPotion => {
+                                let p = DrawParam::default()
+                                    .src(rect_from_sprite_offset(potion, spritewidth))
+                                    .dest(map_to_window_coords(o.x, o.y))
+                                    .scale(core::Vector2::new(0.5, 0.5));
+
+                                    self.spritebatch.add(p);
+                            },
+                    ObjectType::ItemScroll => {
+                                let p = DrawParam::default()
+                                    .src(rect_from_sprite_offset(scroll, spritewidth))
+                                    .dest(map_to_window_coords(o.x, o.y))
+                                    .scale(core::Vector2::new(0.5, 0.5));
+
+                                    self.spritebatch.add(p);
+                            },
+                    ObjectType::ItemShield => {
+                                let p = DrawParam::default()
+                                    .src(rect_from_sprite_offset(shield, spritewidth))
+                                    .dest(map_to_window_coords(o.x, o.y))
+                                    .scale(core::Vector2::new(0.5, 0.5));
+
+                                    self.spritebatch.add(p);
+                            },
+                    };
+                }
+        graphics::draw(ctx, &self.spritebatch, DrawParam::default());
+        self.spritebatch.clear();
     }
 
     fn draw_map(&mut self, ctx: &mut Context) {
@@ -105,6 +229,10 @@ impl GameplayState {
         }
     }
 
+}
+
+fn rect_from_sprite_offset(offset: i32, sprite_dim: i32) -> graphics::Rect {
+    graphics::Rect::new(0.0, 0.0, 0.09, 1.0)
 }
 
 pub fn handle_keys(
