@@ -39,6 +39,9 @@ pub struct GameplayState {
 
 impl EventHandler for GameplayState {
     fn update(&mut self, ctx: &mut Context) -> GameResult {
+        if self.player_action == PlayerAction::Exit {
+            ggez::event::quit(ctx)
+        }
         if timer::ticks(ctx) % 100 == 0 {
             println!("Delta frame time: {:?}", timer::delta(ctx));
             println!("Average FPS: {:?}", timer::fps(ctx));
@@ -93,7 +96,7 @@ impl GameplayState {
 
         let mut objects = vec![player];
         let canvas = graphics::Canvas::with_window_size(ctx)?;
-        let mut map = Map::new(&mut objects, dungeon_level);
+        let map = Map::new(&mut objects, dungeon_level);
         //map.initialize_fov(ctx);
         let inventory = vec![];
         let player_action = PlayerAction::DidntTakeTurn;
@@ -295,7 +298,7 @@ pub fn handle_keys(
         //     tcod.root.set_fullscreen(!fullscreen);
         //     DidntTakeTurn
         // }
-        // (KeyCode::Escape, .. }, _) => event::quit(ctx), //exit game
+        (KeyCode::Escape, _) => Exit, //exit game
 
         (KeyCode::Up, true) | (KeyCode::Numpad8, true) => {
             player_move_or_attack(0, -1, objects, inventory, log, map);
