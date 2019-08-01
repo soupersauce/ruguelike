@@ -248,6 +248,7 @@ impl GameplayState {
             }
         }
         graphics::draw(ctx, &self.spritebatch, DrawParam::default());
+        self.spritebatch.clear();
     }
 }
 
