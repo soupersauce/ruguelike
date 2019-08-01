@@ -92,20 +92,15 @@ impl GameplayState {
     }
 
     fn draw_map(&mut self, ctx: &mut Context) {
+        let sprite = &self.assets.wall_sprite;
         for x in 0..MAP_WIDTH {
             for y in 0..MAP_HEIGHT {
 
             if self.map.map_grid[x as usize][y as usize].block_sight {
-                let wall = graphics::Mesh::new_rectangle(
-                    ctx, 
-                    graphics::DrawMode::fill(), 
-                    graphics::Rect::new(x as f32, y as f32, 16.0, 16.0), 
-                    COLOR_LIGHT_WALL,
-                    ).expect("a rectangle?");
                 let params = graphics::DrawParam::default()
-                    .dest(map_to_window_coords(x, y));
-                
-                graphics::draw(ctx, &wall, params);
+                    .dest(map_to_window_coords(x, y))
+                    .scale(core::Vector2::new(0.5, 0.5));
+                graphics::draw(ctx, sprite, params);
             }}
         }
     }
