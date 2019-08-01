@@ -524,7 +524,7 @@ pub fn ai_basic(
 ) -> Ai {
     // a basic monster takes its turn. If you can see it, it can see you
     let (monster_x, monster_y) = objects[monster_id].pos();
-    if map.fov_map.is_in_fov(monster_x as usize, monster_y as usize) {
+    // if map.fov_map.is_in_fov(monster_x as usize, monster_y as usize) {
         if objects[monster_id].distance_to(&objects[PLAYER]) >= 2.0 {
             // move towards player if far away
             let (player_x, player_y) = objects[PLAYER].pos();
@@ -534,7 +534,7 @@ pub fn ai_basic(
             let (monster, player) = mut_two(monster_id, PLAYER, objects);
             monster.attack(player, inventory, log);
         }
-    }
+    // }
     Ai::Basic
 }
 
