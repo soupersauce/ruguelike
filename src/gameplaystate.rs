@@ -48,7 +48,7 @@ impl EventHandler for GameplayState {
     fn draw(&mut self, ctx: &mut Context) -> GameResult {
         graphics::clear(ctx, graphics::BLACK);
 
-        self.draw_map(ctx);
+        self.draw_map_sb(ctx);
         self.draw_objects_sb(ctx);
 
         graphics::present(ctx)?;
@@ -233,10 +233,26 @@ impl GameplayState {
         }
     }
 
+    fn draw_map_sb(&mut self, ctx: &mut Context) {
+        let sprite = &self.assets.wall_sprite;
+        for x in 0..MAP_WIDTH {
+            for y in 0..MAP_HEIGHT {
+
+                if self.map.map_grid[x as usize][y as usize].block_sight {
+                    let p = graphics::DrawParam::default()
+                        .src(rect_from_sprite_offset(10, 32))
+                        .dest(map_to_window_coords(x, y))
+                        .scale(core::Vector2::new(0.5, 0.5));
+                    self.spritebatch.add(p);
+                }
+            }
+        }
+        graphics::draw(ctx, &self.spritebatch, DrawParam::default());
+    }
 }
 
 fn rect_from_sprite_offset(offset: i32, sprite_dim: i32) -> graphics::Rect {
-    graphics::Rect::new(offset as f32 * 0.09, 0.0, 0.09, 1.0)
+    graphics::Rect::new(offset as f32 * 0.090909090909090909090909090909, 0.0, 0.090909090909090909090909090909, 1.0)
 }
 
 pub fn handle_keys(
