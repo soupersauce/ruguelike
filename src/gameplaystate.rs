@@ -2,7 +2,7 @@ use std::cmp;
 
 use rand::Rng;
 
-use ggez::{self, Context, event::EventHandler, GameResult};
+use ggez::{self, Context, event::EventHandler, GameResult, timer};
 use ggez::graphics::{self, Color, Image, spritebatch, DrawParam};
 use ggez::input::*;
 use ggez::input::keyboard::{KeyCode, KeyMods};
@@ -37,7 +37,11 @@ pub struct GameplayState {
 }
 
 impl EventHandler for GameplayState {
-    fn update(&mut self, _ctx: &mut Context) -> GameResult {
+    fn update(&mut self, ctx: &mut Context) -> GameResult {
+        if timer::ticks(ctx) % 100 == 0 {
+            println!("Delta frame time: {:?}", timer::delta(ctx));
+            println!("Average FPS: {:?}", timer::fps(ctx));
+        }
         Ok(())
     }
 
@@ -232,7 +236,7 @@ impl GameplayState {
 }
 
 fn rect_from_sprite_offset(offset: i32, sprite_dim: i32) -> graphics::Rect {
-    graphics::Rect::new(0.0, 0.0, 0.09, 1.0)
+    graphics::Rect::new(offset as f32 * 0.09, 0.0, 0.09, 1.0)
 }
 
 pub fn handle_keys(
