@@ -34,6 +34,7 @@ pub struct GameplayState {
     dungeon_level: u32,
     objects: Vec<Object>,
     spritebatch: spritebatch::SpriteBatch,
+    player_action: PlayerAction,
 }
 
 impl EventHandler for GameplayState {
@@ -41,6 +42,15 @@ impl EventHandler for GameplayState {
         if timer::ticks(ctx) % 100 == 0 {
             println!("Delta frame time: {:?}", timer::delta(ctx));
             println!("Average FPS: {:?}", timer::fps(ctx));
+        }
+        
+        if self.objects[PLAYER].alive && self.player_action != PlayerAction::DidntTakeTurn {
+            for id in 0..self.objects.len() {
+                if self.objects[id].ai.is_some() {
+                    ai_take_turn(id, &mut self.inventory, &mut self.objects, &self.map, &mut self.log);
+                }
+            }
+            self.player_action = PlayerAction::DidntTakeTurn;
         }
         Ok(())
     }
@@ -56,7 +66,7 @@ impl EventHandler for GameplayState {
     }
 
     fn key_down_event(&mut self, ctx: &mut Context, keycode: KeyCode, _keymods: KeyMods, _repeat: bool) {
-        handle_keys(ctx, keycode, _keymods, _repeat, &mut self.objects, &mut self.inventory, &mut self.log, &self.map);
+        self.player_action = handle_keys(ctx, keycode, _keymods, _repeat, &mut self.objects, &mut self.inventory, &mut self.log, &self.map);
     }
 
 }
@@ -84,7 +94,8 @@ impl GameplayState {
         let mut map = Map::new(&mut objects, dungeon_level);
         //map.initialize_fov(ctx);
         let inventory = vec![];
-        Ok(GameplayState{ canvas, assets, map, log, inventory, dungeon_level, objects, spritebatch})
+        let player_action = PlayerAction::DidntTakeTurn;
+        Ok(GameplayState{ canvas, assets, map, log, inventory, dungeon_level, objects, spritebatch, player_action})
     }
 
     fn draw_objects(&mut self, ctx: &mut Context) {
@@ -248,6 +259,7 @@ impl GameplayState {
             }
         }
         graphics::draw(ctx, &self.spritebatch, DrawParam::default());
+        self.spritebatch.clear();
     }
 }
 
