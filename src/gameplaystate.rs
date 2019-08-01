@@ -43,6 +43,8 @@ impl EventHandler for GameplayState {
             println!("Delta frame time: {:?}", timer::delta(ctx));
             println!("Average FPS: {:?}", timer::fps(ctx));
         }
+
+        println!("{:?}", self.player_action);
         
         if self.objects[PLAYER].alive && self.player_action != PlayerAction::DidntTakeTurn {
             for id in 0..self.objects.len() {
