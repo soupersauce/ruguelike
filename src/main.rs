@@ -23,9 +23,6 @@ mod object;
 
 use crate::gameplaystate::GameplayState;
 
-type Point2 = nalgebra::geometry::Point2<f32>;
-type Vector2 = nalgebra::base::Vector2<f32>;
-
 fn main() -> GameResult {
     let window_mode = WindowMode {
         width: 1280.0,
