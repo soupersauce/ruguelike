@@ -5,7 +5,6 @@ authors = ["soupersauce <soupersauce@gmail.com>"]
 edition = "2018"
 
 [dependencies]
-tcod = { version = "0.15", features = ["serialization"]}
 ggez = "0.5.1"
 ggez-goodies = { git = "https://github.com/ggez/ggez-goodies.git", branch = "devel" }
 sdl2 = "0.32.2"
@@ -13,7 +12,6 @@ rand = "0.3.9"
 serde = "1.0"
 serde_derive = "1.0"
 serde_json = "1.0"
-aseprite = "*"
 doryen-fov = "0.1.1"
 
 [profile.dev]
