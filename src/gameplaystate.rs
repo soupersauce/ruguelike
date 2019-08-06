@@ -2,6 +2,8 @@ use std::cmp;
 
 use rand::Rng;
 
+use doryen_fov::{FovAlgorithm, FovRecursiveShadowCasting, MapData};
+
 use ggez::graphics::{self, spritebatch, Color, DrawParam, Image};
 use ggez::input::keyboard::{KeyCode, KeyMods};
 use ggez::input::*;
@@ -33,7 +35,6 @@ pub struct GameplayState {
     pub inventory: Vec<Object>,
     dungeon_level: u32,
     objects: Vec<Object>,
-    spritebatch: spritebatch::SpriteBatch,
     player_action: PlayerAction,
 }
 
@@ -98,8 +99,6 @@ impl GameplayState {
     pub fn new(ctx: &mut Context) -> GameResult<GameplayState> {
         let log = vec![];
         let assets = Assets::new(ctx)?;
-        let sprite_sheet = graphics::Image::new(ctx, "/sheet.png")?;
-        let spritebatch = graphics::spritebatch::SpriteBatch::new(sprite_sheet);
         let mut player = Object::new(0, 0, ObjectType::Player, "player", true);
         let dungeon_level = 1;
         player.alive = true;
@@ -115,7 +114,7 @@ impl GameplayState {
         let mut objects = vec![player];
         let canvas = graphics::Canvas::with_window_size(ctx)?;
         let map = Map::new(&mut objects, dungeon_level);
-        //map.initialize_fov(ctx);
+        // map.initialize_fov(ctx);
         let inventory = vec![];
         let player_action = PlayerAction::DidntTakeTurn;
         Ok(GameplayState {
@@ -126,24 +125,11 @@ impl GameplayState {
             inventory,
             dungeon_level,
             objects,
-            spritebatch,
             player_action,
         })
     }
 
-    fn draw_objects(&mut self, ctx: &mut Context) {
-        for o in &self.objects {
-            let sprite = self.assets.object_image(&o);
-            let params = graphics::DrawParam::default()
-                .dest(map_to_window_coords(o.x, o.y))
-                .scale(core::Vector2::new(0.5, 0.5));
-
-            graphics::draw(ctx, sprite, params);
-        }
-    }
-
     fn draw_objects_sb(&mut self, ctx: &mut Context) {
-        let spritewidth = 32;
         let corpse = 0;
         let dagger = 1;
         let orc = 2;
@@ -154,152 +140,143 @@ impl GameplayState {
         let stairs = 7;
         let sword = 8;
         let troll = 9;
-        let _wall = 10;
+
+        let object_sprite_width = self.assets.object_sprite_width();
 
         for o in &self.objects {
             match o.object_type {
                 ObjectType::Player => {
-                    if !o.alive {
-                        let p = DrawParam::default()
-                            .src(rect_from_sprite_offset(corpse, spritewidth))
-                            .dest(map_to_window_coords(o.x, o.y))
-                            .scale(core::Vector2::new(0.5, 0.5));
-
-                        self.spritebatch.add(p);
-                    } else {
-                        let p = DrawParam::default()
-                            .src(rect_from_sprite_offset(player, spritewidth))
-                            .dest(map_to_window_coords(o.x, o.y))
-                            .scale(core::Vector2::new(0.5, 0.5));
-
-                        self.spritebatch.add(p);
-                    }
                 }
                 ObjectType::Orc => {
                     if !o.alive {
                         let p = DrawParam::default()
-                            .src(rect_from_sprite_offset(corpse, spritewidth))
+                            .src(rect_from_sprite_offset(corpse, object_sprite_width))
                             .dest(map_to_window_coords(o.x, o.y))
                             .scale(core::Vector2::new(0.5, 0.5));
 
-                        self.spritebatch.add(p);
+                        self.assets.object_sheet.add(p);
                     } else {
                         let p = DrawParam::default()
-                            .src(rect_from_sprite_offset(orc, spritewidth))
+                            .src(rect_from_sprite_offset(orc, object_sprite_width))
                             .dest(map_to_window_coords(o.x, o.y))
                             .scale(core::Vector2::new(0.5, 0.5));
 
-                        self.spritebatch.add(p);
+                        self.assets.object_sheet.add(p);
                     }
                 }
                 ObjectType::Troll => {
                     if !o.alive {
                         let p = DrawParam::default()
-                            .src(rect_from_sprite_offset(corpse, spritewidth))
+                            .src(rect_from_sprite_offset(corpse, object_sprite_width))
                             .dest(map_to_window_coords(o.x, o.y))
                             .scale(core::Vector2::new(0.5, 0.5));
 
-                        self.spritebatch.add(p);
+                        self.assets.object_sheet.add(p);
                     } else {
                         let p = DrawParam::default()
-                            .src(rect_from_sprite_offset(troll, spritewidth))
+                            .src(rect_from_sprite_offset(troll, object_sprite_width))
                             .dest(map_to_window_coords(o.x, o.y))
                             .scale(core::Vector2::new(0.5, 0.5));
 
-                        self.spritebatch.add(p);
+                        self.assets.object_sheet.add(p);
                     }
                 }
                 ObjectType::Stairs => {
                     let p = DrawParam::default()
-                        .src(rect_from_sprite_offset(stairs, spritewidth))
+                        .src(rect_from_sprite_offset(stairs, object_sprite_width))
                         .dest(map_to_window_coords(o.x, o.y))
                         .scale(core::Vector2::new(0.5, 0.5));
 
-                    self.spritebatch.add(p);
+                    self.assets.object_sheet.add(p);
                 }
                 ObjectType::ItemSword => {
                     let p = DrawParam::default()
-                        .src(rect_from_sprite_offset(sword, spritewidth))
+                        .src(rect_from_sprite_offset(sword, object_sprite_width))
                         .dest(map_to_window_coords(o.x, o.y))
                         .scale(core::Vector2::new(0.5, 0.5));
 
-                    self.spritebatch.add(p);
+                    self.assets.object_sheet.add(p);
                 }
                 ObjectType::ItemDagger => {
                     let p = DrawParam::default()
-                        .src(rect_from_sprite_offset(dagger, spritewidth))
+                        .src(rect_from_sprite_offset(dagger, object_sprite_width))
                         .dest(map_to_window_coords(o.x, o.y))
                         .scale(core::Vector2::new(0.5, 0.5));
 
-                    self.spritebatch.add(p);
+                    self.assets.object_sheet.add(p);
                 }
                 ObjectType::ItemPotion => {
                     let p = DrawParam::default()
-                        .src(rect_from_sprite_offset(potion, spritewidth))
+                        .src(rect_from_sprite_offset(potion, object_sprite_width))
                         .dest(map_to_window_coords(o.x, o.y))
                         .scale(core::Vector2::new(0.5, 0.5));
 
-                    self.spritebatch.add(p);
+                    self.assets.object_sheet.add(p);
                 }
                 ObjectType::ItemScroll => {
                     let p = DrawParam::default()
-                        .src(rect_from_sprite_offset(scroll, spritewidth))
+                        .src(rect_from_sprite_offset(scroll, object_sprite_width))
                         .dest(map_to_window_coords(o.x, o.y))
                         .scale(core::Vector2::new(0.5, 0.5));
 
-                    self.spritebatch.add(p);
+                    self.assets.object_sheet.add(p);
                 }
                 ObjectType::ItemShield => {
                     let p = DrawParam::default()
-                        .src(rect_from_sprite_offset(shield, spritewidth))
+                        .src(rect_from_sprite_offset(shield, object_sprite_width))
                         .dest(map_to_window_coords(o.x, o.y))
                         .scale(core::Vector2::new(0.5, 0.5));
 
-                    self.spritebatch.add(p);
+                    self.assets.object_sheet.add(p);
                 }
             };
         }
-        graphics::draw(ctx, &self.spritebatch, DrawParam::default());
-        self.spritebatch.clear();
-    }
+        if !self.objects[PLAYER].alive {
+            let p = DrawParam::default()
+                .src(rect_from_sprite_offset(corpse, object_sprite_width))
+                .dest(map_to_window_coords(self.objects[PLAYER].x, self.objects[PLAYER].y))
+                .scale(core::Vector2::new(0.5, 0.5));
 
-    fn draw_map(&mut self, ctx: &mut Context) {
-        let sprite = &self.assets.wall_sprite;
-        for x in 0..MAP_WIDTH {
-            for y in 0..MAP_HEIGHT {
-                if self.map.map_grid[x as usize][y as usize].block_sight {
-                    let params = graphics::DrawParam::default()
-                        .dest(map_to_window_coords(x, y))
-                        .scale(core::Vector2::new(0.5, 0.5));
-                    graphics::draw(ctx, sprite, params);
-                }
-            }
+            self.assets.object_sheet.add(p);
+        } else {
+            let p = DrawParam::default()
+                .src(rect_from_sprite_offset(player, object_sprite_width))
+                .dest(map_to_window_coords(self.objects[PLAYER].x, self.objects[PLAYER].y))
+                .scale(core::Vector2::new(0.5, 0.5));
+
+            self.assets.object_sheet.add(p);
         }
+        graphics::draw(ctx, &self.assets.object_sheet, DrawParam::default());
+        self.assets.object_sheet.clear();
     }
 
     fn draw_map_sb(&mut self, ctx: &mut Context) {
-        let sprite = &self.assets.wall_sprite;
+        let light_wall = 0;
+        let dark_wall = 1;
+        
+        let wall_sprite_width = self.assets.wall_sprite_width();
+
         for x in 0..MAP_WIDTH {
             for y in 0..MAP_HEIGHT {
                 if self.map.map_grid[x as usize][y as usize].block_sight {
                     let p = graphics::DrawParam::default()
-                        .src(rect_from_sprite_offset(10, 32))
+                        .src(rect_from_sprite_offset(dark_wall, wall_sprite_width))
                         .dest(map_to_window_coords(x, y))
                         .scale(core::Vector2::new(0.5, 0.5));
-                    self.spritebatch.add(p);
+                    self.assets.wall_sheet.add(p);
                 }
             }
         }
-        graphics::draw(ctx, &self.spritebatch, DrawParam::default());
-        self.spritebatch.clear();
+        graphics::draw(ctx, &self.assets.wall_sheet, DrawParam::default());
+        self.assets.wall_sheet.clear();
     }
 }
 
-fn rect_from_sprite_offset(offset: i32, sprite_dim: i32) -> graphics::Rect {
+fn rect_from_sprite_offset(offset: i32, sprite_dim: f32) -> graphics::Rect {
     graphics::Rect::new(
-        offset as f32 * 0.090909090909090909090909090909,
+        offset as f32 * sprite_dim,
         0.0,
-        0.090909090909090909090909090909,
+        sprite_dim,
         1.0,
     )
 }

@@ -1,81 +1,47 @@
 use ggez::graphics::*;
 use ggez::Context;
 use ggez::GameResult;
+use ggez::graphics::spritebatch::*;
 
 use crate::object::*;
 
+const NUM_OBJECT_SPRITES: i32  = 10;
+const NUM_WALL_SPRITES: i32 = 2;
+const SPRITE_WIDTH: i32 = 32;
+
 pub struct Assets {
-    pub player_sprite: Image,
-    pub orc_sprite: Image,
-    pub troll_sprite: Image,
-    pub sword_sprite: Image,
-    pub dagger_sprite: Image,
-    pub shield_sprite: Image,
-    pub potion_sprite: Image,
-    pub scroll_sprite: Image,
-    pub wall_sprite: Image,
-    pub stairs_sprite: Image,
-    pub corpse_sprite: Image,
+    pub object_sheet: SpriteBatch,
+    pub wall_sheet: SpriteBatch,
+    pub num_object_sprites: i32,
+    pub num_wall_sprites: i32,
+    pub sprite_width: i32,
 }
 
 impl Assets {
     pub fn new(ctx: &mut Context) -> GameResult<Assets> {
-        let player_sprite = Image::new(ctx, "/player.png")?;
-        let orc_sprite = Image::new(ctx, "/orc.png")?;
-        let troll_sprite = Image::new(ctx, "/troll.png")?;
-        let sword_sprite = Image::new(ctx, "/sword.png")?;
-        let dagger_sprite = Image::new(ctx, "/dagger.png")?;
-        let shield_sprite = Image::new(ctx, "/shield.png")?;
-        let potion_sprite = Image::new(ctx, "/pot.png")?;
-        let scroll_sprite = Image::new(ctx, "/scroll.png")?;
-        let wall_sprite = Image::new(ctx, "/wall.png")?;
-        let stairs_sprite = Image::new(ctx, "/stairs.png")?;
-        let corpse_sprite = Image::new(ctx, "/corpse.png")?;
-
+        let object_sheet = Image::new(ctx, "/sheet.png")?;
+        let object_sheet = SpriteBatch::new(object_sheet);
+        let num_object_sprites = NUM_OBJECT_SPRITES;
+        let wall_sheet = Image::new(ctx, "/wall.png")?;
+        let wall_sheet = SpriteBatch::new(wall_sheet);
+        let num_wall_sprites = NUM_WALL_SPRITES;
+        let sprite_width = SPRITE_WIDTH;
         Ok(Assets {
-            player_sprite,
-            orc_sprite,
-            troll_sprite,
-            sword_sprite,
-            dagger_sprite,
-            shield_sprite,
-            potion_sprite,
-            scroll_sprite,
-            wall_sprite,
-            stairs_sprite,
-            corpse_sprite,
+            object_sheet,
+            wall_sheet,
+            num_object_sprites,
+            num_wall_sprites,
+            sprite_width,
         })
     }
 
-    pub fn object_image(&mut self, object: &Object) -> &mut Image {
-        match object.object_type {
-            ObjectType::Player => {
-                if !object.alive {
-                    &mut self.corpse_sprite
-                } else {
-                    &mut self.player_sprite
-                }
-            }
-            ObjectType::Orc => {
-                if !object.alive {
-                    &mut self.corpse_sprite
-                } else {
-                    &mut self.orc_sprite
-                }
-            }
-            ObjectType::Troll => {
-                if !object.alive {
-                    &mut self.corpse_sprite
-                } else {
-                    &mut self.troll_sprite
-                }
-            }
-            ObjectType::ItemSword => &mut self.sword_sprite,
-            ObjectType::ItemDagger => &mut self.dagger_sprite,
-            ObjectType::ItemScroll => &mut self.scroll_sprite,
-            ObjectType::ItemShield => &mut self.shield_sprite,
-            ObjectType::ItemPotion => &mut self.potion_sprite,
-            ObjectType::Stairs => &mut self.stairs_sprite,
-        }
+    pub fn object_sprite_width(&self) -> f32 {
+        let total_width = self.sprite_width as f32 * self.num_object_sprites as f32;
+        self.sprite_width as f32 / total_width
+    }
+
+    pub fn wall_sprite_width(&self) -> f32 {
+        let total_width = self.sprite_width as f32 * self.num_wall_sprites as f32;
+        self.sprite_width as f32 / total_width
     }
 }

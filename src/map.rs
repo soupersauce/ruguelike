@@ -84,21 +84,21 @@ impl Map {
         );
         stairs.always_visible = true;
         objects.push(stairs);
-        let fov_map = FovMap::new(MAP_HEIGHT as usize, MAP_HEIGHT as usize);
+        let mut fov_map = FovMap::new(MAP_HEIGHT as usize, MAP_WIDTH as usize);
+        initialize_fov(&map_grid, &mut fov_map);
         Map { map_grid, fov_map }
     }
 
-    pub fn initialize_fov(&mut self, ctx: &mut Context) {
-        for y in 0..MAP_HEIGHT {
-            for x in 0..MAP_WIDTH {
-                if !self.map_grid[x as usize][y as usize].block_sight {
-                    &mut self.fov_map.set_transparent(x as usize, y as usize, false);
-                } else {
-                    &mut self.fov_map.set_transparent(x as usize, y as usize, true);
-                }
+}
+pub fn initialize_fov(map_grid: &MapGrid, fov_map: &mut FovMap) {
+    for y in 0..MAP_HEIGHT {
+        for x in 0..MAP_WIDTH {
+            if !map_grid[x as usize][y as usize].block_sight {
+                &mut fov_map.set_transparent(x as usize, y as usize, false);
+            } else {
+                &mut fov_map.set_transparent(x as usize, y as usize, true);
             }
         }
-        graphics::clear(ctx, BLACK);
     }
 }
 pub struct Transition {
