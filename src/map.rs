@@ -94,9 +94,9 @@ pub fn initialize_fov(map_grid: &MapGrid, fov_map: &mut FovMap) {
     for y in 0..MAP_HEIGHT {
         for x in 0..MAP_WIDTH {
             if !map_grid[x as usize][y as usize].block_sight {
-                &mut fov_map.set_transparent(x as usize, y as usize, false);
+                fov_map.set_transparent(x as usize, y as usize, false);
             } else {
-                &mut fov_map.set_transparent(x as usize, y as usize, true);
+                fov_map.set_transparent(x as usize, y as usize, true);
             }
         }
     }
@@ -387,13 +387,13 @@ fn create_room(room: Rect, map: &mut MapGrid) {
 }
 
 fn create_h_tunnel(x1: i32, x2: i32, y: i32, map: &mut MapGrid) {
-    for x in cmp::min(x1, x2)..(cmp::max(x1, x2) + 1) {
+    for x in cmp::min(x1, x2)..=cmp::max(x1, x2) {
         map[x as usize][y as usize] = Tile::empty();
     }
 }
 
 fn create_v_tunnel(y1: i32, y2: i32, x: i32, map: &mut MapGrid) {
-    for y in cmp::min(y1, y2)..(cmp::max(y1, y2) + 1) {
+    for y in cmp::min(y1, y2)..=cmp::max(y1, y2) {
         map[x as usize][y as usize] = Tile::empty();
     }
 }

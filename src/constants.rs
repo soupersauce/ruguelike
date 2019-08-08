@@ -1,5 +1,4 @@
 // use doryen_fov::FovAlgorithm;
-#[allow(dead_code)]
 use ggez::graphics::Color;
 
 pub static LIMIT_FPS: i32 = 60;

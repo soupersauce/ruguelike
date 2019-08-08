@@ -28,7 +28,7 @@ impl MessageLog for Vec<(String, Color)> {
 }
 
 pub struct GameplayState {
-    canvas: graphics::Canvas,
+    _canvas: graphics::Canvas,
     assets: Assets,
     map: Map,
     pub log: Messages,
@@ -112,13 +112,13 @@ impl GameplayState {
         });
 
         let mut objects = vec![player];
-        let canvas = graphics::Canvas::with_window_size(ctx)?;
+        let _canvas = graphics::Canvas::with_window_size(ctx)?;
         let map = Map::new(&mut objects, dungeon_level);
         // map.initialize_fov(ctx);
         let inventory = vec![];
         let player_action = PlayerAction::DidntTakeTurn;
         Ok(GameplayState {
-            canvas,
+            _canvas,
             assets,
             map,
             log,
@@ -282,7 +282,7 @@ fn rect_from_sprite_offset(offset: i32, sprite_dim: f32) -> graphics::Rect {
 }
 
 pub fn handle_keys(
-    ctx: &mut Context,
+    _ctx: &mut Context,
     keycode: KeyCode,
     _keymod: KeyMods,
     _repeat: bool,
@@ -356,7 +356,7 @@ pub fn handle_keys(
                 .iter()
                 .position(|object| object.pos() == objects[PLAYER].pos() && object.item.is_some());
             if let Some(item_id) = item_id {
-                &mut pick_item_up(item_id, objects, log, inventory);
+                pick_item_up(item_id, objects, log, inventory);
             }
             DidntTakeTurn
         }
@@ -444,7 +444,7 @@ fn player_move_or_attack(
     dx: i32,
     dy: i32,
     objects: &mut [Object],
-    inventory: &Vec<Object>,
+    inventory: &[Object],
     log: &mut Messages,
     map: &Map,
 ) {
@@ -549,7 +549,7 @@ pub fn ai_basic(
     log: &mut Messages,
 ) -> Ai {
     // a basic monster takes its turn. If you can see it, it can see you
-    let (monster_x, monster_y) = objects[monster_id].pos();
+    // let (monster_x, monster_y) = objects[monster_id].pos();
     // if map.fov_map.is_in_fov(monster_x as usize, monster_y as usize) {
     if objects[monster_id].distance_to(&objects[PLAYER]) >= 2.0 {
         // move towards player if far away
@@ -584,7 +584,7 @@ fn ai_confused(
             objects,
         );
         Ai::Confused {
-            previous_ai: previous_ai,
+            previous_ai,
             num_turns: num_turns - 1,
         }
     } else {

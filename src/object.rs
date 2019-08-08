@@ -29,7 +29,7 @@ impl Object {
         Object {
             x,
             y,
-            object_type: object_type,
+            object_type,
             // color,
             name: name.into(),
             blocks,
@@ -85,7 +85,7 @@ impl Object {
         None
     }
 
-    pub fn attack(&mut self, target: &mut Object, inventory: &Vec<Object>, log: &mut Messages) {
+    pub fn attack(&mut self, target: &mut Object, inventory: &[Object], log: &mut Messages) {
         // a simple formula for attack damage
         let damage = self.power(inventory) - target.defense(inventory);
         if damage > 0 {
@@ -111,7 +111,7 @@ impl Object {
         }
     }
 
-    pub fn heal(&mut self, amount: i32, inventory: &Vec<Object>) {
+    pub fn heal(&mut self, amount: i32, inventory: &[Object]) {
         let max_hp = self.max_hp(inventory);
         if let Some(ref mut fighter) = self.fighter {
             fighter.hp += amount;
@@ -172,7 +172,7 @@ impl Object {
         }
     }
 
-    pub fn power(&self, inventory: &Vec<Object>) -> i32 {
+    pub fn power(&self, inventory: &[Object]) -> i32 {
         let base_power = self.fighter.map_or(0, |f| f.base_power);
         let bonus: i32 = self
             .get_all_equipped(inventory)
@@ -183,7 +183,7 @@ impl Object {
         base_power + bonus
     }
 
-    pub fn defense(&self, inventory: &Vec<Object>) -> i32 {
+    pub fn defense(&self, inventory: &[Object]) -> i32 {
         let base_defense = self.fighter.map_or(0, |f| f.base_defense);
         let bonus: i32 = self
             .get_all_equipped(inventory)
@@ -194,7 +194,7 @@ impl Object {
         base_defense + bonus
     }
 
-    pub fn max_hp(&self, inventory: &Vec<Object>) -> i32 {
+    pub fn max_hp(&self, inventory: &[Object]) -> i32 {
         let base_max_hp = self.fighter.map_or(0, |f| f.base_max_hp);
         let bonus: i32 = self
             .get_all_equipped(inventory)
@@ -205,7 +205,7 @@ impl Object {
         base_max_hp + bonus
     }
 
-    pub fn get_all_equipped(&self, inventory: &Vec<Object>) -> Vec<Equipment> {
+    pub fn get_all_equipped(&self, inventory: &[Object]) -> Vec<Equipment> {
         if self.name == "player" {
             inventory
                 .iter()
@@ -292,7 +292,7 @@ pub fn monster_death(monster: &mut Object, log: &mut Messages) {
 
 pub fn player_death(player: &mut Object, log: &mut Messages) {
     // the game ended!
-    log.add(format!("You died!"), RED);
+    log.add("You died!".to_string(), RED);
 
     //for added effect, transform the player into a corpse!
     player.alive = false;
