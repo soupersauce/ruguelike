@@ -7,7 +7,7 @@ use ggez::Context;
 use crate::constants::*;
 use crate::gameplaystate::*;
 
-#[derive(Debug)]
+// #[derive(Debug)]
 pub struct Object {
     pub x: i32,
     pub y: i32,
@@ -85,9 +85,9 @@ impl Object {
         None
     }
 
-    pub fn attack(&mut self, target: &mut Object, inventory: &[Object], log: &mut Messages) {
+    pub fn attack(&mut self, target: &mut Object,  log: &mut Messages) {
         // a simple formula for attack damage
-        let damage = self.power(inventory) - target.defense(inventory);
+        let damage = self.power() - target.defense();
         if damage > 0 {
             //make the target take some damage
             log.add(
@@ -172,10 +172,10 @@ impl Object {
         }
     }
 
-    pub fn power(&self, inventory: &[Object]) -> i32 {
+    pub fn power(&self, ) -> i32 {
         let base_power = self.fighter.map_or(0, |f| f.base_power);
         let bonus: i32 = self
-            .get_all_equipped(inventory)
+            .get_all_equipped()
             .iter()
             .map(|e| e.power_bonus)
             .sum();
@@ -183,10 +183,10 @@ impl Object {
         base_power + bonus
     }
 
-    pub fn defense(&self, inventory: &[Object]) -> i32 {
+    pub fn defense(&self, ) -> i32 {
         let base_defense = self.fighter.map_or(0, |f| f.base_defense);
         let bonus: i32 = self
-            .get_all_equipped(inventory)
+            .get_all_equipped()
             .iter()
             .map(|e| e.defense_bonus)
             .sum();
@@ -194,10 +194,10 @@ impl Object {
         base_defense + bonus
     }
 
-    pub fn max_hp(&self, inventory: &[Object]) -> i32 {
+    pub fn max_hp(&self, ) -> i32 {
         let base_max_hp = self.fighter.map_or(0, |f| f.base_max_hp);
         let bonus: i32 = self
-            .get_all_equipped(inventory)
+            .get_all_equipped()
             .iter()
             .map(|e| e.max_hp_bonus)
             .sum();
@@ -205,9 +205,9 @@ impl Object {
         base_max_hp + bonus
     }
 
-    pub fn get_all_equipped(&self, inventory: &[Object]) -> Vec<Equipment> {
+    pub fn get_all_equipped(&self, ) -> Vec<Equipment> {
         if self.name == "player" {
-            inventory
+            self.fighter.unwrap().inventory
                 .iter()
                 .filter(|item| item.equipment.map_or(false, |e| e.equipped))
                 .map(|item| item.equipment.unwrap())
@@ -218,7 +218,7 @@ impl Object {
     }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
+// #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Fighter {
     pub base_max_hp: i32,
     pub hp: i32,
@@ -226,6 +226,7 @@ pub struct Fighter {
     pub base_power: i32,
     pub on_death: DeathCallback,
     pub xp: i32,
+    pub inventory: Vec<Object>,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]

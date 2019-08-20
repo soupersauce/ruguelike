@@ -32,7 +32,6 @@ pub struct GameplayState {
     assets: Assets,
     map: Map,
     pub log: Messages,
-    pub inventory: Vec<Object>,
     dungeon_level: u32,
     objects: Vec<Object>,
     player_action: PlayerAction,
@@ -53,7 +52,6 @@ impl EventHandler for GameplayState {
                 if self.objects[id].ai.is_some() {
                     ai_take_turn(
                         id,
-                        &mut self.inventory,
                         &mut self.objects,
                         &self.map,
                         &mut self.log,
@@ -88,7 +86,6 @@ impl EventHandler for GameplayState {
             _keymods,
             _repeat,
             &mut self.objects,
-            &mut self.inventory,
             &mut self.log,
             &self.map,
         );
@@ -102,6 +99,17 @@ impl GameplayState {
         let mut player = Object::new(0, 0, ObjectType::Player, "player", true);
         let dungeon_level = 1;
         player.alive = true;
+        let player_inventory = vec![];
+        let mut dagger = Object::new(0, 0, ObjectType::ItemDagger, "dagger", false);
+        dagger.item = Some(Item::Sword);
+        dagger.equipment = Some(Equipment {
+            equipped: true,
+            slot: Slot::LeftHand,
+            max_hp_bonus: 0,
+            defense_bonus: 0,
+            power_bonus: 2,
+        });
+        player_inventory.push(dagger);
         player.fighter = Some(Fighter {
             base_max_hp: 100,
             hp: 100,
@@ -109,20 +117,19 @@ impl GameplayState {
             base_power: 3,
             on_death: DeathCallback::Player,
             xp: 0,
+            inventory: player_inventory,
         });
 
         let mut objects = vec![player];
         let _canvas = graphics::Canvas::with_window_size(ctx)?;
         let map = Map::new(&mut objects, dungeon_level);
         // map.initialize_fov(ctx);
-        let inventory = vec![];
         let player_action = PlayerAction::DidntTakeTurn;
         Ok(GameplayState {
             _canvas,
             assets,
             map,
             log,
-            inventory,
             dungeon_level,
             objects,
             player_action,
@@ -287,7 +294,6 @@ pub fn handle_keys(
     _keymod: KeyMods,
     _repeat: bool,
     objects: &mut Vec<Object>,
-    inventory: &mut Vec<Object>,
     log: &mut Messages,
     map: &Map,
 ) -> PlayerAction {
@@ -310,42 +316,42 @@ pub fn handle_keys(
         (KeyCode::Escape, _) => Exit, //exit game
 
         (KeyCode::Up, true) | (KeyCode::Numpad8, true) => {
-            player_move_or_attack(0, -1, objects, inventory, log, map);
+            player_move_or_attack(0, -1, objects, log, map);
             TookTurn
         }
 
         (KeyCode::Down, true) | (KeyCode::Numpad2, true) => {
-            player_move_or_attack(0, 1, objects, inventory, log, map);
+            player_move_or_attack(0, 1, objects, log, map);
             TookTurn
         }
 
         (KeyCode::Left, true) | (KeyCode::Numpad4, true) => {
-            player_move_or_attack(-1, 0, objects, inventory, log, map);
+            player_move_or_attack(-1, 0, objects, log, map);
             TookTurn
         }
 
         (KeyCode::Right, true) | (KeyCode::Numpad6, true) => {
-            player_move_or_attack(1, 0, objects, inventory, log, map);
+            player_move_or_attack(1, 0, objects, log, map);
             TookTurn
         }
 
         (KeyCode::Home, true) | (KeyCode::Numpad7, true) => {
-            player_move_or_attack(-1, -1, objects, inventory, log, map);
+            player_move_or_attack(-1, -1, objects, log, map);
             TookTurn
         }
 
         (KeyCode::PageUp, true) | (KeyCode::Numpad9, true) => {
-            player_move_or_attack(1, -1, objects, inventory, log, map);
+            player_move_or_attack(1, -1, objects, log, map);
             TookTurn
         }
 
         (KeyCode::End, true) | (KeyCode::Numpad1, true) => {
-            player_move_or_attack(-1, 1, objects, inventory, log, map);
+            player_move_or_attack(-1, 1, objects, log, map);
             TookTurn
         }
 
         (KeyCode::PageDown, true) | (KeyCode::Numpad3, true) => {
-            player_move_or_attack(1, 1, objects, inventory, log, map);
+            player_move_or_attack(1, 1, objects, log, map);
             TookTurn
         }
 
@@ -356,7 +362,7 @@ pub fn handle_keys(
                 .iter()
                 .position(|object| object.pos() == objects[PLAYER].pos() && object.item.is_some());
             if let Some(item_id) = item_id {
-                pick_item_up(item_id, objects, log, inventory);
+                pick_item_up(item_id, objects, log);
             }
             DidntTakeTurn
         }
@@ -416,9 +422,9 @@ pub fn handle_keys(
                     level,
                     fighter.xp,
                     level_up_xp,
-                    player.max_hp(inventory),
-                    player.power(inventory),
-                    player.defense(inventory),
+                    player.max_hp(),
+                    player.power(),
+                    player.defense(),
                 );
                 // msgbox(&msg, CHARACTER_SCREEN_WIDTH, &mut tcod.root);
             }
@@ -444,7 +450,6 @@ fn player_move_or_attack(
     dx: i32,
     dy: i32,
     objects: &mut [Object],
-    inventory: &[Object],
     log: &mut Messages,
     map: &Map,
 ) {
@@ -461,7 +466,7 @@ fn player_move_or_attack(
     match target_id {
         Some(target_id) => {
             let (player, target) = mut_two(PLAYER, target_id, objects);
-            player.attack(target, inventory, log);
+            player.attack(target, log);
         }
         None => {
             move_by(PLAYER, dx, dy, &map, objects);
@@ -515,7 +520,6 @@ fn level_up(objects: &mut [Object], game: &mut GameplayState) {
 
 pub fn ai_take_turn(
     monster_id: usize,
-    inventory: &mut Vec<Object>,
     objects: &mut [Object],
     map: &Map,
     log: &mut Messages,
@@ -523,14 +527,13 @@ pub fn ai_take_turn(
     use crate::object::Ai::*;
     if let Some(ai) = objects[monster_id].ai.take() {
         let new_ai = match ai {
-            Basic => ai_basic(monster_id, inventory, objects, map, log),
+            Basic => ai_basic(monster_id,  objects, map, log),
             Confused {
                 previous_ai,
                 num_turns,
             } => ai_confused(
                 monster_id,
                 objects,
-                inventory,
                 previous_ai,
                 num_turns,
                 map,
@@ -543,7 +546,6 @@ pub fn ai_take_turn(
 
 pub fn ai_basic(
     monster_id: usize,
-    inventory: &Vec<Object>,
     objects: &mut [Object],
     map: &Map,
     log: &mut Messages,
@@ -558,7 +560,7 @@ pub fn ai_basic(
     } else if objects[PLAYER].fighter.map_or(false, |f| f.hp > 0) {
         // close enough to attack! (if the player is still alive)
         let (monster, player) = mut_two(monster_id, PLAYER, objects);
-        monster.attack(player, inventory, log);
+        monster.attack(player, log);
     }
     // }
     Ai::Basic
@@ -601,9 +603,8 @@ fn pick_item_up(
     object_id: usize,
     objects: &mut Vec<Object>,
     log: &mut Messages,
-    inventory: &mut Vec<Object>,
 ) {
-    if inventory.len() >= 26 {
+    if objects[PLAYER].fighter.inventory.unwrap().len() >= 26 {
         log.add(
             format!(
                 "Your inventory is full, cannot pick up {}.",
@@ -614,13 +615,13 @@ fn pick_item_up(
     } else {
         let item = objects.swap_remove(object_id);
         log.add(format!("You picked up a {}!", item.name), GREEN);
-        let index = inventory.len();
+        let index = objects[PLAYER].fighter.inventory.len();
         let slot = item.equipment.map(|e| e.slot);
-        inventory.push(item);
+        objects[PLAYER].fighter.inventory.push(item);
 
         if let Some(slot) = slot {
-            if get_equipped_in_slot(slot, &inventory).is_none() {
-                inventory[index].equip(log);
+            if get_equipped_in_slot(slot, &objects[PLAYER].fighter.inventory).is_none() {
+                objects[PLAYER].fighter.inventory[index].equip(log);
             }
         }
     }
